@@ -1,0 +1,12 @@
+# Binaries
+/tetmux
+*.exe
+*.out
+
+# Test / coverage artifacts
+cover.out
+coverage.*
+
+# Editor / OS cruft
+.DS_Store
+*.swp
