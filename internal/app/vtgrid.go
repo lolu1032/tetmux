@@ -13,11 +13,11 @@ const (
 	attrBold    int16 = 1 << 2
 )
 
-// vt10x default color sentinels (Color = 1<<24 + iota for DefaultFG/BG/Cursor).
-const (
-	defaultFG vt10x.Color = 1<<24 + iota
-	defaultBG
-)
+// vt10x packs colors as: [0,16) ANSI, [16,256) xterm-256, [256,1<<24) a 24-bit
+// truecolor value (r<<16|g<<8|b), and >= 1<<24 the default FG/BG/Cursor
+// sentinels. So any value below colorMax is a real, renderable color and
+// anything at or above it means "use the terminal default".
+const colorMax vt10x.Color = 1 << 24
 
 // vtGridAdapter wraps a vt10x.Terminal view so it satisfies the
 // vtrender.Grid interface. Callers MUST hold the terminal lock around Render;
@@ -41,10 +41,10 @@ func (a *vtGridAdapter) CellRune(x, y int) rune {
 func (a *vtGridAdapter) CellStyle(x, y int) vtrender.Style {
 	g := a.term.Cell(x, y)
 	st := vtrender.Style{FG: -1, BG: -1}
-	if g.FG != defaultFG {
+	if g.FG < colorMax {
 		st.FG = int(g.FG)
 	}
-	if g.BG != defaultBG {
+	if g.BG < colorMax {
 		st.BG = int(g.BG)
 	}
 	if g.Mode&attrBold != 0 {

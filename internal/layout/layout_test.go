@@ -58,8 +58,8 @@ func TestTooSmallExtreme(t *testing.T) {
 func TestHeightCalc(t *testing.T) {
 	b := DefaultBorders()
 	l := Compute(80, 40, b)
-	// inner height = H - status(1) - top(1) - bottom(1) = 40 - 3 = 37
-	want := 40 - StatusRows - b.Top - b.Bottom
+	// inner height = H - status(1) - tab(1) - top(1) - bottom(1) = 40 - 4 = 36
+	want := 40 - StatusRows - TabRows - b.Top - b.Bottom
 	if l.InnerHeight != want {
 		t.Errorf("inner height = %d, want %d", l.InnerHeight, want)
 	}
@@ -112,6 +112,62 @@ func TestBorderAccountingCustom(t *testing.T) {
 	}
 }
 
+func TestComputeSplitZeroEqualsCompute(t *testing.T) {
+	b := DefaultBorders()
+	for _, w := range []int{80, 81, 100, 60, 40, 10, 2} {
+		a := Compute(w, 40, b)
+		c := ComputeSplit(w, 40, b, 0)
+		if a != c {
+			t.Errorf("W=%d: ComputeSplit offset 0 (%+v) must equal Compute (%+v)", w, c, a)
+		}
+	}
+}
+
+func TestComputeSplitShiftsDivider(t *testing.T) {
+	b := DefaultBorders()
+	base := Compute(100, 40, b)
+	grow := ComputeSplit(100, 40, b, 8)
+	if grow.LeftInnerWidth != base.LeftInnerWidth+8 {
+		t.Errorf("offset +8: left = %d, want %d", grow.LeftInnerWidth, base.LeftInnerWidth+8)
+	}
+	if grow.RightInnerWidth != base.RightInnerWidth-8 {
+		t.Errorf("offset +8: right = %d, want %d", grow.RightInnerWidth, base.RightInnerWidth-8)
+	}
+	// No columns lost regardless of offset.
+	if got := TotalColumnsAccountedFor(grow, b); got != 100 {
+		t.Errorf("offset +8: columns accounted = %d, want 100", got)
+	}
+}
+
+func TestComputeSplitKeepsBoardPlayable(t *testing.T) {
+	b := DefaultBorders()
+	// A huge positive offset would zero the right pane, but the clamp keeps it
+	// at least MinBoardWidth so Tetris stays playable.
+	l := ComputeSplit(100, 40, b, 1000)
+	if l.RightInnerWidth < MinBoardWidth {
+		t.Errorf("right inner %d clamped below MinBoardWidth %d", l.RightInnerWidth, MinBoardWidth)
+	}
+	if l.TooSmall {
+		t.Errorf("right pinned at the board minimum should not be TooSmall: %+v", l)
+	}
+	if got := TotalColumnsAccountedFor(l, b); got != 100 {
+		t.Errorf("clamped offset: columns accounted = %d, want 100", got)
+	}
+}
+
+func TestComputeSplitNegativeShrinksLeft(t *testing.T) {
+	b := DefaultBorders()
+	// A large negative offset shrinks the left pane toward zero (user's choice)
+	// without ever going negative.
+	l := ComputeSplit(100, 40, b, -1000)
+	if l.LeftInnerWidth < 0 || l.RightInnerWidth < 0 {
+		t.Errorf("widths must never be negative: %+v", l)
+	}
+	if got := TotalColumnsAccountedFor(l, b); got != 100 {
+		t.Errorf("negative offset: columns accounted = %d, want 100", got)
+	}
+}
+
 func TestNormalTerminalNotTooSmall(t *testing.T) {
 	b := DefaultBorders()
 	// A comfortable terminal: right inner must be >= MinBoardWidth and inner
@@ -125,5 +181,38 @@ func TestNormalTerminalNotTooSmall(t *testing.T) {
 	}
 	if l.InnerHeight < MinBoardHeight {
 		t.Errorf("inner height %d < min %d", l.InnerHeight, MinBoardHeight)
+	}
+}
+
+func TestOffsetForRatio(t *testing.T) {
+	b := DefaultBorders()
+	// Width 104 => content = 104 - 2*(1+1) = 100, evenLeft = 50.
+	const w = 104
+	cases := []struct {
+		l, r     int
+		wantLeft int // desired left inner width before ComputeSplit clamping
+	}{
+		{1, 1, 50}, // even
+		{2, 1, 66}, // 100*2/3 = 66
+		{1, 2, 33}, // 100*1/3 = 33
+		{2, 2, 50}, // 2:2 reduces to 1:1
+	}
+	for _, c := range cases {
+		off := OffsetForRatio(w, b, c.l, c.r)
+		// Feeding the offset to ComputeSplit must yield ~the desired left width
+		// (subject to the board-protection clamp, which doesn't bite at 104 wide).
+		got := ComputeSplit(w, 40, b, off).LeftInnerWidth
+		if got != c.wantLeft {
+			t.Errorf("ratio %d:%d -> left=%d, want %d (offset=%d)", c.l, c.r, got, c.wantLeft, off)
+		}
+		// Every column must still be accounted for (no leaks).
+		if total := TotalColumnsAccountedFor(ComputeSplit(w, 40, b, off), b); total != w {
+			t.Errorf("ratio %d:%d columns accounted = %d, want %d", c.l, c.r, total, w)
+		}
+	}
+
+	// Non-positive ratios fall back to the even split (offset 0).
+	if off := OffsetForRatio(w, b, 0, 1); off != 0 {
+		t.Errorf("zero ratio should yield offset 0, got %d", off)
 	}
 }

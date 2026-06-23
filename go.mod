@@ -1,14 +1,20 @@
 module tetmux
 
-go 1.26.3
+go 1.24.0
 
 require (
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/creack/pty v1.1.24
 	github.com/hinshun/vt10x v0.0.0-20220301184237-5011da428d02
+	github.com/mattn/go-runewidth v0.0.16
 	github.com/muesli/termenv v0.16.0
 )
+
+// tetmux vendors a CJK-width-aware fork of vt10x: upstream advances the cursor
+// by one column per rune, which mis-renders wide (Hangul/CJK) glyphs as a
+// character followed by a phantom blank in the left pane. See third_party/vt10x.
+replace github.com/hinshun/vt10x => ./third_party/vt10x
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
@@ -20,7 +26,6 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
-	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect

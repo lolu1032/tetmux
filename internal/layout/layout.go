@@ -15,6 +15,9 @@ const (
 	MinBoardHeight = 20
 	// StatusRows is the number of rows reserved for the status bar.
 	StatusRows = 1
+	// TabRows is the number of rows reserved at the top for the clickable
+	// window tab bar.
+	TabRows = 1
 )
 
 // Borders describes the per-pane border thickness. For a standard lipgloss
@@ -52,11 +55,22 @@ type Layout struct {
 	TooSmall        bool // true if the terminal cannot fit the board
 }
 
-// Compute splits a W x H terminal into two bordered panes plus a status row.
+// Compute splits a W x H terminal into two even bordered panes plus a status
+// row. It is exactly ComputeSplit with a zero divider offset (even 50/50).
+func Compute(w, h int, b Borders) Layout {
+	return ComputeSplit(w, h, b, 0)
+}
+
+// ComputeSplit is Compute with a user-controlled divider offset. splitOffset is
+// the number of content columns to shift the divider away from the even
+// midpoint: positive grows the LEFT (command) pane and shrinks the right
+// (Tetris) pane; negative does the reverse. The right pane is never shrunk
+// below MinBoardWidth while the terminal can still afford it, so the Tetris
+// board stays playable no matter how far the user pushes the divider.
 //
 // Width: total border columns are subtracted; the remaining content width is
-// split into two inner widths that differ by at most 1 (left gets the extra
-// odd column). Neither inner width is ever negative.
+// split into two inner widths. With offset 0 they differ by at most 1 (left
+// gets the extra odd column). Neither inner width is ever negative.
 //
 // Height: the status row and each pane's top+bottom borders are subtracted to
 // give the pane inner height; never negative.
@@ -64,7 +78,7 @@ type Layout struct {
 // TooSmall is set when either pane inner width or the inner height falls below
 // what the Tetris board needs, OR when subtracting borders/status would make a
 // dimension negative.
-func Compute(w, h int, b Borders) Layout {
+func ComputeSplit(w, h int, b Borders, splitOffset int) Layout {
 	var l Layout
 
 	// --- width ---
@@ -72,16 +86,25 @@ func Compute(w, h int, b Borders) Layout {
 	if content < 0 {
 		content = 0
 	}
-	left := content / 2
-	right := content - left
-	// Give the extra odd column to the left pane for a stable, testable rule.
-	if content%2 == 1 {
-		left = (content + 1) / 2
-		right = content - left
+	// Even baseline: the extra odd column goes to the left pane for a stable,
+	// testable rule. The user's divider offset is then applied on top.
+	left := (content + 1) / 2
+	left += splitOffset
+
+	// Clamp. When the terminal is wide enough to afford the board, keep the
+	// right (Tetris) pane at least MinBoardWidth so it stays playable; allow
+	// the left pane to shrink to nothing if the user really wants to.
+	maxLeft := content
+	if content >= MinBoardWidth {
+		maxLeft = content - MinBoardWidth
+	}
+	if left > maxLeft {
+		left = maxLeft
 	}
 	if left < 0 {
 		left = 0
 	}
+	right := content - left
 	if right < 0 {
 		right = 0
 	}
@@ -89,7 +112,9 @@ func Compute(w, h int, b Borders) Layout {
 	l.RightInnerWidth = right
 
 	// --- height ---
-	usableH := h - StatusRows
+	// Reserve the top tab-bar row and the bottom status row, then each pane's
+	// top+bottom borders.
+	usableH := h - StatusRows - TabRows
 	if usableH < 0 {
 		usableH = 0
 	}
@@ -115,6 +140,25 @@ func Compute(w, h int, b Borders) Layout {
 	}
 
 	return l
+}
+
+// OffsetForRatio returns the splitOffset that makes the LEFT inner width about
+// leftRatio:rightRatio of the available content width at terminal width w. Feed
+// the result to ComputeSplit, which still clamps so the Tetris board stays
+// playable. Because it is derived from w, recomputing it on every layout keeps a
+// chosen ratio stable across terminal resizes (an absolute offset would drift).
+// Non-positive ratios yield 0 (the even split).
+func OffsetForRatio(w int, b Borders, leftRatio, rightRatio int) int {
+	if leftRatio <= 0 || rightRatio <= 0 {
+		return 0
+	}
+	content := w - b.horizontalBordersTotal()
+	if content < 0 {
+		content = 0
+	}
+	evenLeft := (content + 1) / 2
+	desiredLeft := content * leftRatio / (leftRatio + rightRatio)
+	return desiredLeft - evenLeft
 }
 
 // TotalColumnsAccountedFor returns leftInner + rightInner + all border columns

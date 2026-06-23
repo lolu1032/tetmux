@@ -17,6 +17,12 @@ func toRouterKey(msg tea.KeyMsg) router.Key {
 	switch msg.Type {
 	case tea.KeyCtrlB:
 		return router.Key{Type: router.KeyCtrlB, Bytes: []byte{0x02}}
+	case tea.KeyTab:
+		return router.Key{Type: router.KeyTab, Bytes: []byte{'\t'}}
+	case tea.KeyEsc:
+		return router.Key{Type: router.KeyEsc, Bytes: []byte{0x1b}}
+	case tea.KeyCtrlC:
+		return router.Key{Type: router.KeyCtrlC, Bytes: []byte{0x03}}
 	case tea.KeyLeft:
 		return router.Key{Type: router.KeyLeft, Bytes: []byte("\x1b[D")}
 	case tea.KeyRight:
@@ -65,6 +71,28 @@ func specialBytes(msg tea.KeyMsg) []byte {
 		return []byte(s)
 	}
 	return nil
+}
+
+// Bracketed-paste markers (DEC private mode 2004). A child that enabled the mode
+// expects pasted content delivered framed by these so it can treat a paste (a
+// dragged-in file/image path, a multi-line block) differently from individually
+// typed keys — without them an app like claude shows a pasted image path as
+// literal text instead of attaching it.
+const (
+	pasteStart = "\x1b[200~"
+	pasteEnd   = "\x1b[201~"
+)
+
+// wrapBracketedPaste frames b with the bracketed-paste markers so the child sees
+// it as one paste. Only used when the child has enabled mode 2004 (see
+// leftPane.BracketedPaste); feeding the markers to an app that didn't ask for
+// them would surface them as garbage.
+func wrapBracketedPaste(b []byte) []byte {
+	out := make([]byte, 0, len(pasteStart)+len(b)+len(pasteEnd))
+	out = append(out, pasteStart...)
+	out = append(out, b...)
+	out = append(out, pasteEnd...)
+	return out
 }
 
 // joinRows joins rendered rows with newlines.

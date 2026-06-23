@@ -33,9 +33,19 @@ type Game struct {
 	Board   [Height][Width]int // 0 = empty, otherwise (kind+1)
 	Filled  [Height][Width]bool
 	Current Piece
-	Score   int
-	Lines   int
-	state   State
+	// Next is the kind that will spawn after the current piece locks. It is
+	// drawn one step ahead so the UI can show a "next" preview, exactly like a
+	// standard Tetris game. The spawn order is unchanged: Current still cycles
+	// through the same deterministic 7-bag sequence.
+	Next PieceKind
+	// Held is the piece parked in the hold slot; HasHeld is false until the
+	// player first holds. holdUsed gates hold to once per piece (standard rule).
+	Held     PieceKind
+	HasHeld  bool
+	holdUsed bool
+	Score    int
+	Lines    int
+	state    State
 
 	rng *rand.Rand
 	// bag is a simple sequence source. We use a fresh shuffled 7-bag so the
@@ -52,6 +62,9 @@ func NewGame(seed int64) *Game {
 		rng:   rand.New(rand.NewSource(seed)),
 		state: Playing,
 	}
+	// Pre-draw the first upcoming piece, then spawn (which consumes it and
+	// draws the following one into Next).
+	g.Next = g.nextKind()
 	g.spawn()
 	return g
 }
@@ -91,12 +104,52 @@ const spawnOriginX = 3
 // spawn places a new current piece at the top. If it immediately collides
 // with locked cells, the game transitions to GameOver.
 func (g *Game) spawn() {
-	kind := g.nextKind()
+	kind := g.Next
+	g.Next = g.nextKind()
+	g.holdUsed = false // a fresh piece may be held again
 	p := Piece{Kind: kind, Rotation: 0, X: spawnOriginX, Y: 0}
 	g.Current = p
 	if g.collides(p.Cells()) {
 		g.state = GameOver
 	}
+}
+
+// Level rises every 10 cleared lines, starting at 0. Callers scale gravity (and
+// can display it) from this; it is pure so it stays testable.
+func (g *Game) Level() int { return g.Lines / 10 }
+
+// GhostY returns the Y the current piece would rest at if hard-dropped now,
+// without mutating anything — used to render the landing "ghost" outline.
+func (g *Game) GhostY() int {
+	y := g.Current.Y
+	for g.CanPlace(g.Current.X, y+1, g.Current.Rotation) {
+		y++
+	}
+	return y
+}
+
+// Hold parks the current piece in the hold slot and brings the held piece (or
+// the next piece, the first time) into play, re-spawning at the top. It is a
+// no-op if the game is not playing or hold was already used for this piece
+// (standard one-hold-per-piece rule). Returns true if a swap happened.
+func (g *Game) Hold() bool {
+	if g.state != Playing || g.holdUsed {
+		return false
+	}
+	cur := g.Current.Kind
+	if g.HasHeld {
+		g.Current = Piece{Kind: g.Held, Rotation: 0, X: spawnOriginX, Y: 0}
+		g.Held = cur
+		if g.collides(g.Current.Cells()) {
+			g.state = GameOver
+		}
+	} else {
+		g.Held = cur
+		g.HasHeld = true
+		g.spawn() // resets holdUsed=false; we set it true below
+	}
+	g.holdUsed = true
+	return true
 }
 
 // collides reports whether any of the supplied cells is out of bounds or

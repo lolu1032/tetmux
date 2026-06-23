@@ -2,6 +2,7 @@ package app
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
@@ -26,6 +27,18 @@ func TestRenderTetrisRowWidths(t *testing.T) {
 	}
 }
 
+// The game-over overlay shows the GAME OVER banner, the final score, and the
+// 재시작 prompt so a defeated player knows how to replay.
+func TestRenderGameOverMenu(t *testing.T) {
+	r := lipgloss.NewRenderer(os.Stdout)
+	out := renderGameOverMenu(r, 1234, 5000)
+	for _, want := range []string{"GAME OVER", "재시작", "1234"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("game-over overlay missing %q:\n%s", want, out)
+		}
+	}
+}
+
 func TestGameStatusLine(t *testing.T) {
 	g := tetris.NewGame(1)
 	if got := gameStatusLine(g); got != "playing" {
@@ -46,7 +59,7 @@ func TestGameStatusLine(t *testing.T) {
 	if over.State() != tetris.GameOver {
 		t.Fatalf("expected GameOver, got %v", over.State())
 	}
-	if got := gameStatusLine(over); got != "GAME OVER - prefix+r to restart" {
+	if got := gameStatusLine(over); got != "GAME OVER - press r to restart" {
 		t.Errorf("gameover: got %q", got)
 	}
 }

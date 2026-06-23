@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Main module dependencies (bubbletea, lipgloss, creack/pty, runewidth, ...).
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # The vendored CJK-width-aware vt10x fork is its own module.
+  - package-ecosystem: gomod
+    directory: "/third_party/vt10x"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # Keep the GitHub Actions in the CI workflow current.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
