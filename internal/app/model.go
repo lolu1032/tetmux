@@ -89,6 +89,16 @@ type Model struct {
 	// is paused so the menu always opens on "계속하기".
 	pauseSel int
 
+	// autoPaused records that the CURRENT Paused state was forced by the glue
+	// layer (focus left the game while it was Playing, or the terminal shrank
+	// below the board) rather than by a user Esc/p. Only an auto-pause is
+	// auto-resumed: when focus returns to the game (and the board fits) an
+	// auto-paused game resumes and restarts gravity, while a user pause stays
+	// paused until the user resumes it. It is the single flag that keeps the
+	// input-focus state machine and the game lifecycle from drifting into
+	// contradictory states. See reconcileFocus.
+	autoPaused bool
+
 	// ctrlCArmed/ctrlCAt implement "press Ctrl-C twice to quit" from the command
 	// pane: a single Ctrl-C is forwarded to the child (so you can cancel e.g. a
 	// claude turn), and a second one within ctrlCQuitWindow quits tetmux. Any
@@ -217,6 +227,42 @@ func (m *Model) startGravity() tea.Cmd {
 	})
 }
 
+// reconcileFocus makes the game lifecycle a pure function of the current input
+// focus, recomputed lazily wherever focus or the game is observed (the Update
+// key path, gravity ticks, mouse focus changes). It is the single point that
+// keeps the two state machines coherent:
+//
+//   - Focus left the game while it was Playing -> auto-pause it and flag the
+//     pause as automatic. The live gravity loop then stops on its next tick
+//     (handleGravity no-ops once the game is not Playing), so a backgrounded
+//     board never tops out silently.
+//   - Focus returned to the game while it is AUTO-paused and the board fits ->
+//     auto-resume (Playing) and clear the flag; the returned Cmd restarts the
+//     gravity loop. A USER pause (autoPaused==false) is left untouched, so it is
+//     never auto-resumed by a focus change.
+//
+// It returns the gravity Cmd to schedule (non-nil only on an auto-resume) so the
+// caller in the Update path can keep the gravity loop alive; callers that cannot
+// thread a Cmd (gravity/mouse) rely on the next observation to restart it.
+func (m *Model) reconcileFocus() tea.Cmd {
+	if m.rstate.Focus == router.FocusRight {
+		// Returned to the game: resume an auto-pause once the board fits again.
+		if m.autoPaused && m.game.State() == tetris.Paused && !m.layout().TooSmall {
+			m.game.SetState(tetris.Playing)
+			m.autoPaused = false
+			return m.startGravity()
+		}
+		return nil
+	}
+	// Left the game: auto-pause a Playing board so gravity stops.
+	if m.game.State() == tetris.Playing {
+		m.game.SetState(tetris.Paused)
+		m.pauseSel = pauseResume
+		m.autoPaused = true
+	}
+	return nil
+}
+
 // notify builds the callback the left pane's reader goroutine invokes when new
 // output arrives. It is a no-op when no Send func was injected (e.g. in tests).
 func (m *Model) notify() func() {
@@ -233,7 +279,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		return m.handleResize(msg)
 	case tea.KeyMsg:
-		return m.handleKey(msg)
+		model, cmd := m.handleKey(msg)
+		// A focus change (Tab / C-b h|l|arrows) drives the game lifecycle: leaving
+		// the game auto-pauses it, returning auto-resumes an auto-pause. Reconcile
+		// after the key is routed so the focus the user just set is the source of
+		// truth, and prefer the auto-resume gravity Cmd so the loop restarts on the
+		// same keystroke that re-focuses the board.
+		if rc := m.reconcileFocus(); rc != nil {
+			cmd = rc
+		}
+		return model, cmd
 	case tea.MouseMsg:
 		return m.handleMouse(msg)
 	case gravityTickMsg:
@@ -301,6 +356,7 @@ func (m *Model) handleResize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 	if l.TooSmall && m.game.State() == tetris.Playing {
 		m.game.SetState(tetris.Paused)
 		m.pauseSel = pauseResume
+		m.autoPaused = true // shrinking too small is an auto-pause; a regrow + focus resumes it
 	}
 
 	cols := maxInt(l.LeftInnerWidth, 1)
@@ -471,9 +527,12 @@ func (m *Model) handleGameKey(msg tea.KeyMsg) tea.Cmd {
 		switch msg.String() {
 		case "p", "esc":
 			// Esc and p pause the game; the pause overlay (renderRight) then shows
-			// the selectable Resume/Restart menu, opening on "계속하기".
+			// the selectable Resume/Restart menu, opening on "계속하기". This is a
+			// USER pause, so clear the auto-pause flag: a later focus change must
+			// NOT auto-resume a pause the user asked for.
 			m.game.SetState(tetris.Paused)
 			m.pauseSel = pauseResume
+			m.autoPaused = false
 		case "r":
 			m.restart()
 		}

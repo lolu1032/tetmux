@@ -1,0 +1,40 @@
+appId: com.tetmux.app
+productName: tetmux
+copyright: Copyright © 2026 tetmux
+
+directories:
+  buildResources: build
+  output: dist
+
+files:
+  - out/**/*
+  - package.json
+  - "!**/*.{md,markdown}"
+  - "!**/*.map"
+
+# node-pty ships a native addon that cannot run from inside the asar archive,
+# so it must be unpacked alongside the app.
+asarUnpack:
+  - "**/node_modules/node-pty/**"
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - dmg
+    - zip
+  hardenedRuntime: false
+  gatekeeperAssess: false
+
+win:
+  target:
+    - nsis
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
+linux:
+  category: Development
+  target:
+    - AppImage
+    - deb

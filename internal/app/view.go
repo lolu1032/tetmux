@@ -88,19 +88,28 @@ func (m *Model) renderRight(l layout.Layout) string {
 		return style.Render("window too small")
 	}
 
-	// While stopped, show a centered pause menu over the whole pane instead of
-	// the board — the "일시정지 / 계속하기" overlay.
-	if m.game.State() == tetris.Paused {
-		menu := renderPauseMenu(m.renderer, m.pauseSel)
-		body := lipgloss.Place(maxInt(w, 1), maxInt(h, 1), lipgloss.Center, lipgloss.Center, menu)
-		return style.Render(body)
-	}
-	// After a loss, replace the board with the game-over overlay (final score +
-	// the 재시작 prompt), mirroring the pause overlay.
-	if m.game.State() == tetris.GameOver {
-		menu := renderGameOverMenu(m.renderer, m.game.Score, m.best)
-		body := lipgloss.Place(maxInt(w, 1), maxInt(h, 1), lipgloss.Center, lipgloss.Center, menu)
-		return style.Render(body)
+	// The Paused / GameOver overlays are INTERACTIVE modals (their Resume /
+	// Restart keys only work when the game pane has focus). Show them only while
+	// the game is focused: when the command pane is focused those keys route to
+	// the child instead, so an overlay shown then would be an unreachable,
+	// undismissable modal contradicting the status bar's focus:LEFT. With the
+	// command pane focused we fall through to the plain board (a non-modal,
+	// background view) so focus and what's drawn never disagree.
+	if focused {
+		// While stopped, show a centered pause menu over the whole pane instead of
+		// the board — the "일시정지 / 계속하기" overlay.
+		if m.game.State() == tetris.Paused {
+			menu := renderPauseMenu(m.renderer, m.pauseSel)
+			body := lipgloss.Place(maxInt(w, 1), maxInt(h, 1), lipgloss.Center, lipgloss.Center, menu)
+			return style.Render(body)
+		}
+		// After a loss, replace the board with the game-over overlay (final score +
+		// the 재시작 prompt), mirroring the pause overlay.
+		if m.game.State() == tetris.GameOver {
+			menu := renderGameOverMenu(m.renderer, m.game.Score, m.best)
+			body := lipgloss.Place(maxInt(w, 1), maxInt(h, 1), lipgloss.Center, lipgloss.Center, menu)
+			return style.Render(body)
+		}
 	}
 
 	board := joinRows(renderTetris(m.game, m.renderer))
@@ -241,6 +250,14 @@ func (m *Model) handleMouse(e tea.MouseMsg) (tea.Model, tea.Cmd) {
 			m.rstate.Focus = router.FocusLeft
 		} else {
 			m.rstate.Focus = router.FocusRight
+		}
+		// A click that changes focus drives the game lifecycle the same way Tab
+		// does: clicking away from a Playing board auto-pauses it (so gravity
+		// stops), clicking back onto an auto-paused board resumes it. Keeping this
+		// here means a mouse focus change can't strand the game in a state that
+		// contradicts the focus shown in the status bar.
+		if cmd := m.reconcileFocus(); cmd != nil {
+			return m, cmd
 		}
 	}
 	return m, nil
