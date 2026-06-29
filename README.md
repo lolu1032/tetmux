@@ -10,7 +10,7 @@
   <a href="https://github.com/lolu1032/tetmux/releases/latest"><img src="https://img.shields.io/github/v/release/lolu1032/tetmux?display_name=tag" alt="latest release"></a>
   <a href="https://github.com/lolu1032/tetmux/releases"><img src="https://img.shields.io/github/downloads/lolu1032/tetmux/total?color=2dd4bf" alt="downloads"></a>
   <img src="https://img.shields.io/badge/platform-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-6b7686" alt="platforms">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4ade80" alt="license"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-4ade80" alt="license"></a>
 </p>
 
 You start an AI agent (or a long build, or a test run) and then you wait.
@@ -129,4 +129,10 @@ the full developer guide.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+**[PolyForm Noncommercial 1.0.0](LICENSE)** — free for personal, hobby, academic,
+and other **noncommercial** use. **Commercial use requires a separate license.**
+
+Want to use tetmux commercially? Open an issue or reach out to the maintainer
+([@lolu1032](https://github.com/lolu1032)) for a commercial license.
+
+(Bundled third-party code keeps its own license — see `third_party/`.)
