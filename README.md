@@ -53,10 +53,14 @@ Grab the latest installer from the **[Releases page](https://github.com/lolu1032
 | **Windows** | `tetmux Setup <version>.exe` |
 | **Linux** | `tetmux-<version>.AppImage` · `.deb` |
 
-> **Opening on macOS:** the app isn't notarized yet, so the first launch is
-> blocked by Gatekeeper. **Right-click the app → Open** (or run
-> `xattr -dr com.apple.quarantine /Applications/tetmux.app`) once, and it opens
-> normally after that. Windows SmartScreen: **More info → Run anyway**.
+> **Opening on macOS:** the app is ad-hoc signed but not notarized yet, so the
+> first launch needs a confirm. Drag it to Applications, then **right-click the
+> app → Open → Open**. If macOS still says it's *"damaged"*, clear the download
+> quarantine once and reopen:
+> ```sh
+> xattr -cr /Applications/tetmux.app
+> ```
+> Windows SmartScreen: **More info → Run anyway**.
 
 ## What you get
 
