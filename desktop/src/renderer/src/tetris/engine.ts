@@ -211,6 +211,11 @@ export class TetrisEngine {
   }
 
   setSoftDrop(active: boolean): void {
+    // Engaging soft drop must not "cash in" gravity time that accumulated against
+    // the slow base interval: tick() drains gravityAcc at the (much smaller) soft-
+    // drop interval, so a high leftover would drop many rows in one tick and the
+    // piece appears to teleport. Reset the accumulator so soft drop starts fresh.
+    if (active && !this.softDropping) this.gravityAcc = 0
     this.softDropping = active
   }
 

@@ -135,4 +135,20 @@ describe('TetrisEngine', () => {
     }
     expect(e.snapshot().board.every((r) => r.every((v) => v === 0))).toBe(true)
   })
+
+  // Soft drop must not teleport: engaging it while gravity time has accumulated
+  // against the slow base interval used to dump many rows in a single tick.
+  it('does not teleport when soft drop is engaged with accumulated gravity', () => {
+    const e = new TetrisEngine({ rng: mulberry32(1) }) // O piece, spawns at the top
+    e.start()
+    const topY = (): number => Math.min(...e.snapshot().active!.cells.map((c) => c.y))
+    // Accumulate almost a full slow gravity step (level 0 = 800ms) without dropping.
+    e.tick(790)
+    const before = topY()
+    // Engage soft drop and run ONE normal frame: the piece must fall at most a row
+    // or two, not jump down the board.
+    e.setSoftDrop(true)
+    e.tick(16)
+    expect(topY() - before).toBeLessThanOrEqual(2)
+  })
 })
