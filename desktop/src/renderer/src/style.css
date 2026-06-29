@@ -302,6 +302,28 @@ body[data-platform='darwin'] .sidebar-head {
   gap: 6px;
   font-family: var(--mono);
 }
+.hud-restart {
+  margin-top: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.hud-restart:hover {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+.hud-restart:active {
+  background: var(--panel-2);
+}
 .stat {
   display: flex;
   justify-content: space-between;
@@ -332,6 +354,10 @@ body[data-platform='darwin'] .sidebar-head {
   padding: 20px 28px;
   text-align: center;
   backdrop-filter: blur(2px);
+  /* The overlay container stays click-through; only the card itself is clickable
+     (click to start / retry / resume — it already says "press Enter"). */
+  pointer-events: auto;
+  cursor: pointer;
 }
 .overlay-card h2 {
   margin: 0 0 8px;

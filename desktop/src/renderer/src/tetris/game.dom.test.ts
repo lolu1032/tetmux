@@ -73,6 +73,22 @@ describe('TetrisGame focus-driven pause', () => {
     game.handleKeyDown(key('r'))
     expect(status()).toBe('playing') // fresh board, still playing
   })
+
+  it('the HUD restart button starts a fresh game (mouse restart)', () => {
+    const { game, status } = makeGame()
+    expect(status()).toBe('ready')
+    const btn = game.el.querySelector('.hud-restart') as HTMLButtonElement
+    btn.dispatchEvent(new Event('click'))
+    expect(status()).toBe('playing')
+  })
+
+  it('clicking the overlay starts / retries the game', () => {
+    const { game, status } = makeGame()
+    status() // render so the overlay reflects the ready state
+    const overlay = game.el.querySelector('.tetris-overlay') as HTMLElement
+    overlay.dispatchEvent(new Event('click'))
+    expect(status()).toBe('playing')
+  })
 })
 
 // --- input-correctness repro tests -----------------------------------------

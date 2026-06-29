@@ -117,6 +117,7 @@ export class TetrisGame {
           <canvas class="next-canvas" width="92" height="220"></canvas>
         </div>
         <div class="hud-stats"></div>
+        <button class="hud-restart" type="button" title="Restart (R)">↻ Restart</button>
       </div>`
 
     this.boardWrap = this.el.querySelector('.tetris-board') as HTMLElement
@@ -126,8 +127,28 @@ export class TetrisGame {
     this.overlay = this.el.querySelector('.tetris-overlay') as HTMLElement
     this.stats = this.el.querySelector('.hud-stats') as HTMLElement
 
+    // Mouse restart: a visible button always restarts; clicking the ready /
+    // game-over / paused overlay does the matching thing (start / retry / resume)
+    // since it literally says "press Enter".
+    const restartBtn = this.el.querySelector('.hud-restart') as HTMLButtonElement
+    restartBtn.addEventListener('click', () => this.restart())
+    this.overlay.addEventListener('click', () => this.overlayClick())
+
     const ro = new ResizeObserver(() => this.resize())
     ro.observe(this.boardWrap)
+  }
+
+  /** Start a fresh game (same as the `r` key). Safe to call any time. */
+  restart(): void {
+    this.engine.start()
+    this.autoPaused = false
+  }
+
+  private overlayClick(): void {
+    const status = this.engine.snapshot().status
+    if (status === 'ready' || status === 'gameover') this.engine.start()
+    else if (status === 'paused') this.engine.togglePause()
+    this.autoPaused = false
   }
 
   setActive(active: boolean): void {
@@ -212,8 +233,7 @@ export class TetrisGame {
         return true
       case 'restart':
         // Restart with a fresh board at any time (matches the original Go TUI).
-        this.engine.start()
-        this.autoPaused = false
+        this.restart()
         return true
       case 'start': {
         const status = this.engine.snapshot().status

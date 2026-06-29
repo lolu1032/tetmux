@@ -93,7 +93,9 @@ it again). A pause you set yourself with `p` stays paused until you resume it.
 **Tetris** (when focused) — `←`/`→` move (hold to auto-shift) · `↓` soft drop ·
 `↑`/`x` rotate CW · `z` rotate CCW · `Space` hard drop · `c` hold · `p` pause ·
 `r` restart · `Enter` start / retry. (Game keys resolve by physical key, so they
-work the same under a non-Latin keyboard layout / IME.)
+work the same under a non-Latin keyboard layout / IME.) Mouse: a **Restart**
+button sits under the stats, and clicking the ready / game-over overlay starts a
+new game.
 
 ## How it works
 
