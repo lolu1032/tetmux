@@ -35,7 +35,10 @@ const THEME = {
 export class TermWindow {
   readonly id: number
   readonly el: HTMLElement
+  /** Title reported by the PTY (OSC 0/2). */
   title = 'shell'
+  /** User-set name; overrides the PTY title in the sidebar when present. */
+  customTitle: string | null = null
   exited = false
   /** Per-window attention state shown as a dot in the sidebar. */
   readonly activity = new WindowActivity()
@@ -47,6 +50,11 @@ export class TermWindow {
   onExit?: () => void
   /** Fired when something the sidebar shows changes (activity, cwd, branch). */
   onActivity?: () => void
+
+  /** Display name for the sidebar / status bar: the user's name, else the PTY title. */
+  get name(): string {
+    return this.customTitle || this.title
+  }
 
   private term: Terminal
   private fitAddon = new FitAddon()

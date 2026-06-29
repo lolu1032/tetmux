@@ -14,6 +14,10 @@ export class TerminalArea {
   private windows: TermWindow[] = []
   private active = -1
   private nextId = 1
+  // id of the window whose sidebar title is being inline-renamed, or null. While
+  // set, renderSidebar() is frozen so a background refresh can't destroy the
+  // in-progress <input>.
+  private editingId: number | null = null
 
   /** Fired whenever anything the host renders changes (selection, attention, …). */
   onChange?: () => void
@@ -60,7 +64,7 @@ export class TerminalArea {
 
   get activeLabel(): string {
     const w = this.activeWindow
-    return w ? `${this.active + 1}:${w.title}` : '—'
+    return w ? `${this.active + 1}:${w.name}` : '—'
   }
 
   /** Background windows currently wanting attention (for the status bar). */
@@ -128,6 +132,9 @@ export class TerminalArea {
   closeWindow(index: number): void {
     const win = this.windows[index]
     if (!win) return
+    // If the window being closed is mid-rename, drop the edit so the frozen
+    // sidebar unfreezes and re-renders cleanly.
+    if (this.editingId === win.id) this.editingId = null
     const activeWin = this.windows[this.active]
     win.dispose()
     this.windows.splice(index, 1)
@@ -176,6 +183,9 @@ export class TerminalArea {
   }
 
   private renderSidebar(): void {
+    // Frozen during an inline rename so a background refresh can't blow away the
+    // <input> mid-edit; commit/cancel re-render once editing ends.
+    if (this.editingId !== null) return
     const items = this.windows.map((win, i) => {
       const item = document.createElement('div')
       item.className = 'win-item' + (i === this.active ? ' active' : '')
@@ -188,7 +198,12 @@ export class TerminalArea {
       meta.className = 'win-meta'
       const title = document.createElement('div')
       title.className = 'win-title'
-      title.textContent = `${i + 1}: ${win.title}` // textContent: PTY title stays inert
+      title.textContent = `${i + 1}: ${win.name}` // textContent: PTY title stays inert
+      title.title = 'Double-click to rename'
+      title.addEventListener('dblclick', (e) => {
+        e.stopPropagation()
+        this.startRename(win, title, meta)
+      })
       meta.appendChild(title)
       const sub = this.subLabel(win)
       if (sub) {
@@ -212,5 +227,34 @@ export class TerminalArea {
       return item
     })
     this.winList.replaceChildren(...items)
+  }
+
+  /** Swap the sidebar title for an inline <input> to rename a window. */
+  private startRename(win: TermWindow, titleEl: HTMLElement, meta: HTMLElement): void {
+    if (this.editingId !== null) return
+    this.editingId = win.id // freezes renderSidebar so this input survives refreshes
+    const input = document.createElement('input')
+    input.className = 'win-rename'
+    input.value = win.name
+    input.spellcheck = false
+    input.addEventListener('click', (e) => e.stopPropagation()) // don't trigger select
+    input.addEventListener('keydown', (e) => {
+      e.stopPropagation() // keep keys out of the global game/prefix handlers
+      if (e.key === 'Enter') input.blur() // commit
+      else if (e.key === 'Escape') {
+        this.editingId = null // cancel: discard, then restore the title
+        this.refresh()
+      }
+    })
+    input.addEventListener('blur', () => {
+      if (this.editingId !== win.id) return // already cancelled
+      const next = input.value.trim()
+      win.customTitle = next || null // empty clears back to the PTY title
+      this.editingId = null
+      this.refresh()
+    })
+    meta.replaceChild(input, titleEl)
+    input.focus()
+    input.select()
   }
 }

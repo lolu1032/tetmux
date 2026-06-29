@@ -126,4 +126,35 @@ describe('TerminalArea — cwd inheritance + focus routing', () => {
     area.sendInput('\x02')
     expect(writes).toEqual([[1, '\x02']])
   })
+
+  it('renames a window via inline edit; the custom name overrides the PTY title', async () => {
+    const area = new TerminalArea()
+    await area.newWindow()
+    const title = area.sidebar.querySelector('.win-title') as HTMLElement
+    expect(title.textContent).toContain('shell')
+
+    title.dispatchEvent(new Event('dblclick')) // open the inline editor
+    const input = area.sidebar.querySelector('.win-rename') as HTMLInputElement | null
+    expect(input).toBeTruthy()
+
+    input!.value = 'build'
+    input!.dispatchEvent(new Event('blur')) // commit
+
+    expect(area.activeWindow!.customTitle).toBe('build')
+    expect(area.activeLabel).toBe('1:build')
+    expect(area.sidebar.querySelector('.win-title')?.textContent).toContain('build')
+  })
+
+  it('Escape cancels a rename and keeps the PTY title', async () => {
+    const area = new TerminalArea()
+    await area.newWindow()
+    ;(area.sidebar.querySelector('.win-title') as HTMLElement).dispatchEvent(new Event('dblclick'))
+    const input = area.sidebar.querySelector('.win-rename') as HTMLInputElement
+    input.value = 'discard-me'
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+
+    expect(area.activeWindow!.customTitle).toBeNull()
+    expect(area.activeLabel).toBe('1:shell')
+    expect(area.sidebar.querySelector('.win-title')?.textContent).toContain('shell')
+  })
 })
