@@ -150,5 +150,3 @@ and other **noncommercial** use. **Commercial use requires a separate license.**
 
 Want to use tetmux commercially? Contact **park0001736@gmail.com** for a
 commercial license.
-
-(Bundled third-party code keeps its own license — see `third_party/`.)
