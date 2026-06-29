@@ -151,6 +151,15 @@ export class App {
       this.handlePrefixCommand(e)
       return
     }
+    // Ctrl+Tab / Ctrl+Shift+Tab cycles command windows (like browser tabs). Plain
+    // Tab is left alone on purpose — it toggles terminal↔Tetris focus and, in the
+    // terminal, is the shell's own completion key.
+    if (e.ctrlKey && e.key === 'Tab') {
+      e.preventDefault()
+      if (e.shiftKey) this.terminals.prev()
+      else this.terminals.next()
+      return
+    }
     // tmux-style prefix: Ctrl+B
     if (e.ctrlKey && (e.key === 'b' || e.key === 'B')) {
       e.preventDefault()

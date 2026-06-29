@@ -3,12 +3,45 @@ import { drawMini, drawPlayfield } from './render'
 
 const BEST_KEY = 'tetmux.best'
 
-// Keys whose action must fire only on the INITIAL press. The OS auto-repeats
-// keydown (~30/s) while a key is held; for these one-shot actions a repeat must
-// be a no-op (e.g. holding Space must not chain hard-drops). Movement
-// (ArrowLeft/ArrowRight) and soft-drop (ArrowDown) are intentionally absent so
-// they keep honoring auto-repeat.
-const ONE_SHOT = new Set([' ', 'ArrowUp', 'x', 'X', 'z', 'Z', 'c', 'C', 'r', 'R', 'Enter', 'p', 'P'])
+type GameAction =
+  | 'left'
+  | 'right'
+  | 'softDrop'
+  | 'rotateCW'
+  | 'rotateCCW'
+  | 'hardDrop'
+  | 'hold'
+  | 'pause'
+  | 'restart'
+  | 'start'
+
+// Resolve a keydown to a game action. Letter controls match the PHYSICAL key
+// (e.code) so they work under any keyboard layout / IME — the 'c' key reports
+// e.key='ㅊ' under a Korean layout but e.code='KeyC' — with the Latin e.key kept
+// as a fallback. Arrows / Space / Enter are already layout-independent in e.key.
+function resolveAction(e: KeyboardEvent): GameAction | null {
+  switch (e.key) {
+    case 'ArrowLeft':
+      return 'left'
+    case 'ArrowRight':
+      return 'right'
+    case 'ArrowDown':
+      return 'softDrop'
+    case 'ArrowUp':
+      return 'rotateCW'
+    case ' ':
+      return 'hardDrop'
+    case 'Enter':
+      return 'start'
+  }
+  const k = e.key.toLowerCase()
+  if (e.code === 'KeyX' || k === 'x') return 'rotateCW'
+  if (e.code === 'KeyZ' || k === 'z') return 'rotateCCW'
+  if (e.code === 'KeyC' || k === 'c') return 'hold'
+  if (e.code === 'KeyP' || k === 'p') return 'pause'
+  if (e.code === 'KeyR' || k === 'r') return 'restart'
+  return null
+}
 
 // Horizontal auto-shift (DAS/ARR), driven by the run loop instead of the OS key-
 // repeat — whose initial delay and rate are user/OS settings and feel sluggish
@@ -145,48 +178,44 @@ export class TetrisGame {
     // Let app-level shortcuts (the Ctrl+B window prefix, ⌘ shortcuts) pass
     // through untouched — never swallow a key carrying a ctrl/meta modifier.
     if (e.ctrlKey || e.metaKey) return false
-    // Auto-repeat must not re-trigger one-shot actions; still consume the key so
-    // it never leaks to the page (caller preventDefaults on a true return).
-    if (e.repeat && ONE_SHOT.has(e.key)) return true
-    switch (e.key) {
-      case 'ArrowLeft':
-        // Move once on the initial press; ignore OS auto-repeat (tickInput runs
-        // our own DAS/ARR auto-shift while the key stays held).
-        if (!e.repeat) this.startShift(-1)
+    const action = resolveAction(e)
+    if (!action) return false
+    // OS auto-repeat must not re-fire one-shot actions (holding Space must not
+    // chain hard-drops); left/right ignore it too because tickInput runs our own
+    // DAS/ARR auto-shift. Only soft drop repeats. Still return true so the key
+    // never leaks to the page (the caller preventDefaults on a true return).
+    if (e.repeat && action !== 'softDrop') return true
+    switch (action) {
+      case 'left':
+        this.startShift(-1)
         return true
-      case 'ArrowRight':
-        if (!e.repeat) this.startShift(1)
+      case 'right':
+        this.startShift(1)
         return true
-      case 'ArrowDown':
+      case 'softDrop':
         this.engine.setSoftDrop(true)
         return true
-      case 'ArrowUp':
-      case 'x':
-      case 'X':
+      case 'rotateCW':
         this.engine.rotate(1)
         return true
-      case 'z':
-      case 'Z':
+      case 'rotateCCW':
         this.engine.rotate(-1)
         return true
-      case ' ':
+      case 'hardDrop':
         this.engine.hardDrop()
         return true
-      case 'c':
-      case 'C':
+      case 'hold':
         this.engine.hold()
         return true
-      case 'p':
-      case 'P':
+      case 'pause':
         this.engine.togglePause()
         return true
-      case 'r':
-      case 'R':
+      case 'restart':
         // Restart with a fresh board at any time (matches the original Go TUI).
         this.engine.start()
         this.autoPaused = false
         return true
-      case 'Enter': {
+      case 'start': {
         const status = this.engine.snapshot().status
         if (status === 'ready' || status === 'gameover') this.engine.start()
         return true

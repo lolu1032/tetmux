@@ -91,8 +91,10 @@ the sidebar to rename it.
 | `Space` | focus Tetris (play) | | `Tab` | toggle focus |
 | `Ctrl+B` | send a literal `Ctrl+B` to the terminal | | | |
 
-On macOS, `⌘T` new · `⌘W` close · `⌘1`–`9` select · `⌘[` / `⌘]` prev/next also work.
+`Ctrl+Tab` / `Ctrl+Shift+Tab` cycle windows directly (no prefix). On macOS,
+`⌘T` new · `⌘W` close · `⌘1`–`9` select · `⌘[` / `⌘]` prev/next also work.
 
 **Tetris (when focused):** `←`/`→` move (hold to auto-shift) · `↓` soft drop ·
 `↑`/`x` rotate CW · `z` rotate CCW · `Space` hard drop · `c` hold · `p` pause ·
-`r` restart (fresh board, any time) · `Enter` start / retry.
+`r` restart (fresh board, any time) · `Enter` start / retry. Game keys resolve by
+**physical key**, so they work under any keyboard layout / IME (e.g. Korean).

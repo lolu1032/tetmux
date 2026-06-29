@@ -185,4 +185,28 @@ describe('TetrisGame input correctness', () => {
     expect(game.handleKeyDown(ev('x', { metaKey: true }))).toBe(false)
     expect(JSON.stringify(snap().active)).toBe(before)
   })
+
+  // Letter controls resolve by physical key (e.code), so they work under a
+  // non-Latin layout / IME where e.key is a different character.
+  it('hold works under a Korean layout (physical KeyC reports e.key="ㅊ")', () => {
+    const { game, snap } = makeFullGame()
+    game.handleKeyDown(ev('Enter'))
+    expect(snap().hold).toBeNull()
+    // Korean 2-bulsik: the C key emits "ㅊ" but e.code stays "KeyC".
+    const koreanC = new KeyboardEvent('keydown', { key: 'ㅊ', code: 'KeyC' })
+    expect(game.handleKeyDown(koreanC)).toBe(true)
+    expect(snap().hold).not.toBeNull()
+  })
+
+  it('rotate works under a Korean layout (physical KeyX reports e.key="ㅌ")', () => {
+    const { game, snap } = makeFullGame()
+    game.handleKeyDown(ev('Enter'))
+    // advance off the rotation-invariant O piece if needed
+    let guard = 0
+    while (snap().active!.type === 'O' && guard++ < 50) game.handleKeyDown(ev('r'))
+    const before = JSON.stringify(snap().active!.cells)
+    const koreanX = new KeyboardEvent('keydown', { key: 'ㅌ', code: 'KeyX' })
+    expect(game.handleKeyDown(koreanX)).toBe(true)
+    expect(JSON.stringify(snap().active!.cells)).not.toBe(before)
+  })
 })
