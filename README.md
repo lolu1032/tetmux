@@ -13,6 +13,10 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-4ade80" alt="license"></a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/lolu1032/tetmux/releases/latest"><b>⬇&nbsp; Download for macOS · Windows · Linux</b></a>
+</p>
+
 You start an AI agent (or a long build, or a test run) and then you wait.
 30 seconds here, two minutes there. tetmux splits the window: the **left** runs
 your commands through real PTYs — one or more tmux-style windows that all run in
@@ -132,7 +136,7 @@ the full developer guide.
 **[PolyForm Noncommercial 1.0.0](LICENSE)** — free for personal, hobby, academic,
 and other **noncommercial** use. **Commercial use requires a separate license.**
 
-Want to use tetmux commercially? Open an issue or reach out to the maintainer
-([@lolu1032](https://github.com/lolu1032)) for a commercial license.
+Want to use tetmux commercially? Contact **park0001736@gmail.com** for a
+commercial license.
 
 (Bundled third-party code keeps its own license — see `third_party/`.)
