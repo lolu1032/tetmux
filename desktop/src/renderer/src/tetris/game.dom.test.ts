@@ -119,12 +119,36 @@ describe('TetrisGame input correctness', () => {
     expect(snap().score).toBeGreaterThan(0) // guard against disabling Space entirely
   })
 
-  it('keeps honoring auto-repeat for movement keys', () => {
+  const minX = (s: GameSnapshot): number => Math.min(...s.active!.cells.map((c) => c.x))
+
+  it('moves once on the initial arrow press but ignores OS auto-repeat (DAS drives the rest)', () => {
     const { game, snap } = makeFullGame()
     game.handleKeyDown(ev('Enter'))
-    const before = JSON.stringify(snap().active!.cells)
+    const start = minX(snap())
+    expect(game.handleKeyDown(ev('ArrowRight'))).toBe(true) // initial press: one cell
+    const afterPress = minX(snap())
+    expect(afterPress).toBe(start + 1)
+    // An OS auto-repeat keydown must NOT itself move — the run loop's DAS does.
     expect(game.handleKeyDown(ev('ArrowRight', { repeat: true }))).toBe(true)
-    expect(JSON.stringify(snap().active!.cells)).not.toBe(before) // piece actually moved
+    expect(minX(snap())).toBe(afterPress)
+  })
+
+  it('auto-shifts via DAS/ARR while a direction is held, but only after the delay', () => {
+    const { game, snap } = makeFullGame()
+    game.handleKeyDown(ev('Enter'))
+    game.handleKeyDown(ev('ArrowRight')) // initial move
+    const afterPress = minX(snap())
+    // Under the DAS delay (150ms) nothing extra moves yet.
+    game.tickInput(100)
+    expect(minX(snap())).toBe(afterPress)
+    // Cross the DAS threshold → auto-shift engages and the piece keeps moving.
+    game.tickInput(120)
+    expect(minX(snap())).toBeGreaterThan(afterPress)
+    // Releasing the key stops the auto-shift.
+    game.handleKeyUp(new KeyboardEvent('keyup', { key: 'ArrowRight' }))
+    const settled = minX(snap())
+    game.tickInput(500)
+    expect(minX(snap())).toBe(settled)
   })
 
   // DEFECT 2 — bare modifier keys must not be game actions; ctrl/meta passes through.

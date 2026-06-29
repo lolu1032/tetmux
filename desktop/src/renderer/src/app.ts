@@ -195,6 +195,14 @@ export class App {
     if (key === 'Control' || key === 'Shift' || key === 'Alt' || key === 'Meta') {
       return // ignore lone modifiers, stay in prefix
     }
+    // A second Ctrl+B sends a literal C-b (\x02) to the focused terminal — like
+    // tmux's send-prefix, so readline / nested-tmux users can still reach Ctrl+B
+    // even though the app owns the prefix globally.
+    if (e.ctrlKey && (key === 'b' || key === 'B')) {
+      this.terminals.sendInput('\x02')
+      this.exitPrefix()
+      return
+    }
     if (/^[1-9]$/.test(key)) {
       this.terminals.select(Number(key) - 1)
     } else {

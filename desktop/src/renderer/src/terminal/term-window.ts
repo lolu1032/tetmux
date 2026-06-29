@@ -160,6 +160,11 @@ export class TermWindow {
     this.term.blur()
   }
 
+  /** Write raw bytes straight to the backing pty (used for literal-key passthrough). */
+  sendInput(data: string): void {
+    if (this.ptyId !== null) window.tetmux.pty.write(this.ptyId, data)
+  }
+
   setVisible(visible: boolean): void {
     this.el.style.display = visible ? 'block' : 'none'
   }

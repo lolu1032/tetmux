@@ -114,4 +114,16 @@ describe('TerminalArea — cwd inheritance + focus routing', () => {
     area.closeWindow(0) // closes a background window
     expect(onActivate).not.toHaveBeenCalled()
   })
+
+  it('sendInput writes raw bytes to the active window pty (literal C-b passthrough)', async () => {
+    const area = new TerminalArea()
+    await area.newWindow() // active window gets ptyId 1 (mock create returns 1,2,…)
+    const writes: Array<[number, string]> = []
+    ;(window as unknown as { tetmux: { pty: { write: unknown } } }).tetmux.pty.write = (
+      id: number,
+      data: string,
+    ): void => void writes.push([id, data])
+    area.sendInput('\x02')
+    expect(writes).toEqual([[1, '\x02']])
+  })
 })

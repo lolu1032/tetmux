@@ -155,6 +155,11 @@ export class TerminalArea {
     this.activeWindow?.focus()
   }
 
+  /** Write raw bytes to the active window's pty (e.g. a literal C-b passthrough). */
+  sendInput(data: string): void {
+    this.activeWindow?.sendInput(data)
+  }
+
   blurActive(): void {
     this.activeWindow?.blur()
   }

@@ -10,6 +10,12 @@ const BEST_KEY = 'tetmux.best'
 // they keep honoring auto-repeat.
 const ONE_SHOT = new Set([' ', 'ArrowUp', 'x', 'X', 'z', 'Z', 'c', 'C', 'r', 'R', 'Enter', 'p', 'P'])
 
+// Horizontal auto-shift (DAS/ARR), driven by the run loop instead of the OS key-
+// repeat — whose initial delay and rate are user/OS settings and feel sluggish
+// and inconsistent. Hold left/right: move once, wait DAS_MS, then shift ~ARR_MS.
+const DAS_MS = 150
+const ARR_MS = 33
+
 function fit(canvas: HTMLCanvasElement, cssW: number, cssH: number): CanvasRenderingContext2D {
   const dpr = window.devicePixelRatio || 1
   canvas.width = Math.max(1, Math.round(cssW * dpr))
@@ -44,6 +50,18 @@ export class TetrisGame {
   // deliberately paused", so a manual pause is never silently resumed.
   private autoPaused = false
   private readonly onSnapshot?: (snap: GameSnapshot, best: number) => void
+
+  // Horizontal auto-shift state (DAS/ARR). heldDir is the currently-held
+  // direction (0 = none); the run loop advances dasAcc and emits the shifts.
+  private heldDir: -1 | 0 | 1 = 0
+  private dasAcc = 0
+  private dasCharged = false
+
+  // Idle-render guard: skip the per-frame canvas + innerHTML rebuild when the
+  // game is not actively playing and nothing visible changed — keeps the app
+  // near-idle on CPU/battery while you work in the terminal. resize() forces it.
+  private renderSig = ''
+  private painted = false
 
   constructor(opts: { onSnapshot?: (snap: GameSnapshot, best: number) => void } = {}) {
     this.engine = new TetrisEngine()
@@ -87,6 +105,11 @@ export class TetrisGame {
       // keyup (handleKeyUp only runs while focused), so clear it here — otherwise
       // the piece keeps fast-dropping (and scoring) after focus returns.
       this.engine.setSoftDrop(false)
+      // Likewise a held left/right gets no keyup once focus leaves, so stop the
+      // auto-shift — otherwise it would resume spuriously when focus returns.
+      this.heldDir = 0
+      this.dasCharged = false
+      this.dasAcc = 0
       // Focus left the Tetris pane — auto-pause a live game so it does not keep
       // falling (and topping out) while the user works in the terminal. This is
       // the whole point of the app: the game waits for you.
@@ -107,6 +130,7 @@ export class TetrisGame {
     const loop = (t: number): void => {
       const dt = this.lastTime ? Math.min(t - this.lastTime, 100) : 0
       this.lastTime = t
+      this.tickInput(dt)
       this.engine.tick(dt)
       this.render()
       this.raf = requestAnimationFrame(loop)
@@ -126,10 +150,12 @@ export class TetrisGame {
     if (e.repeat && ONE_SHOT.has(e.key)) return true
     switch (e.key) {
       case 'ArrowLeft':
-        this.engine.moveLeft()
+        // Move once on the initial press; ignore OS auto-repeat (tickInput runs
+        // our own DAS/ARR auto-shift while the key stays held).
+        if (!e.repeat) this.startShift(-1)
         return true
       case 'ArrowRight':
-        this.engine.moveRight()
+        if (!e.repeat) this.startShift(1)
         return true
       case 'ArrowDown':
         this.engine.setSoftDrop(true)
@@ -172,6 +198,35 @@ export class TetrisGame {
 
   handleKeyUp(e: KeyboardEvent): void {
     if (e.key === 'ArrowDown') this.engine.setSoftDrop(false)
+    // Release auto-shift only if this key is the one currently held (so pressing
+    // the opposite direction mid-hold correctly takes over — last key wins).
+    else if (e.key === 'ArrowLeft' && this.heldDir === -1) this.heldDir = 0
+    else if (e.key === 'ArrowRight' && this.heldDir === 1) this.heldDir = 0
+  }
+
+  /** Move once now and arm DAS so the run loop auto-shifts while the key is held. */
+  private startShift(dir: -1 | 1): void {
+    if (dir < 0) this.engine.moveLeft()
+    else this.engine.moveRight()
+    this.heldDir = dir
+    this.dasAcc = 0
+    this.dasCharged = false
+  }
+
+  /** Advance horizontal auto-shift; called once per frame by the run loop. */
+  tickInput(dt: number): void {
+    if (this.heldDir === 0) return
+    this.dasAcc += dt
+    if (!this.dasCharged) {
+      if (this.dasAcc < DAS_MS) return
+      this.dasCharged = true
+      this.dasAcc -= DAS_MS
+    }
+    while (this.dasAcc >= ARR_MS) {
+      this.dasAcc -= ARR_MS
+      if (this.heldDir < 0) this.engine.moveLeft()
+      else this.engine.moveRight()
+    }
   }
 
   // ---- rendering -----------------------------------------------------------
@@ -180,15 +235,26 @@ export class TetrisGame {
     const w = this.boardWrap.clientWidth
     const h = this.boardWrap.clientHeight
     if (w > 0 && h > 0) fit(this.boardCanvas, w, h)
-    this.render()
+    this.render(true) // a resize must always repaint, even when idle
   }
 
-  private render(): void {
+  private render(force = false): void {
     const snap = this.engine.snapshot()
     if (snap.score > this.best) {
       this.best = snap.score
       localStorage.setItem(BEST_KEY, String(this.best))
     }
+
+    // While not actively playing the board is static; once painted, skip the
+    // per-frame canvas + innerHTML rebuild until something visible changes (a
+    // resize forces it). State transitions change the signature, so the pause /
+    // game-over / ready overlays still appear and clear correctly.
+    const sig = `${snap.status}|${snap.score}|${snap.lines}|${snap.level}|${this.best}`
+    if (!force && snap.status !== 'playing' && this.painted && sig === this.renderSig) {
+      return
+    }
+    this.renderSig = sig
+    this.painted = true
 
     const boardCtx = this.boardCanvas.getContext('2d')
     if (boardCtx) {
