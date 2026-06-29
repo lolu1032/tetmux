@@ -6,6 +6,16 @@ directories:
   buildResources: build
   output: dist
 
+# Squeeze the installers harder (slower build, smaller download).
+compression: maximum
+
+# Ship only English + Korean of Chromium's bundled UI locales; build/afterPack.cjs
+# deletes the rest (incl. gender-variant locales electronLanguages leaves behind).
+electronLanguages:
+  - en-US
+  - ko
+afterPack: build/afterPack.cjs
+
 files:
   - out/**/*
   - package.json
