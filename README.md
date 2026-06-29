@@ -9,12 +9,12 @@
 <p align="center">
   <a href="https://github.com/lolu1032/tetmux/releases/latest"><img src="https://img.shields.io/github/v/release/lolu1032/tetmux?display_name=tag" alt="latest release"></a>
   <a href="https://github.com/lolu1032/tetmux/releases"><img src="https://img.shields.io/github/downloads/lolu1032/tetmux/total?color=2dd4bf" alt="downloads"></a>
-  <img src="https://img.shields.io/badge/platform-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-6b7686" alt="platforms">
+  <img src="https://img.shields.io/badge/download-macOS%20arm64-6b7686" alt="platform">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-4ade80" alt="license"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/lolu1032/tetmux/releases/latest"><b>⬇&nbsp; Download for macOS · Windows · Linux</b></a>
+  <a href="https://github.com/lolu1032/tetmux/releases/latest"><b>⬇&nbsp; Download for macOS (Apple Silicon)</b></a>
 </p>
 
 You start an AI agent (or a long build, or a test run) and then you wait.
@@ -45,13 +45,12 @@ window that needs you lights up (and the status bar counts how many are
 
 ## Download
 
-Grab the latest installer from the **[Releases page](https://github.com/lolu1032/tetmux/releases/latest)**:
+**macOS (Apple Silicon)** — grab `tetmux-<version>-arm64.dmg` from the
+**[latest release](https://github.com/lolu1032/tetmux/releases/latest)**.
 
-| Platform | File |
-|----------|------|
-| **macOS** (Apple Silicon / Intel) | `tetmux-<version>-arm64.dmg` · `.dmg` |
-| **Windows** | `tetmux Setup <version>.exe` |
-| **Linux** | `tetmux-<version>.AppImage` · `.deb` |
+**Windows · Linux · Intel Mac** — prebuilt installers aren't out yet. For now,
+[build from source](#build-from-source) — it's cross-platform (Electron + pnpm),
+so `pnpm package` produces an installer on whichever OS you run it.
 
 ### Opening it the first time (macOS)
 
@@ -70,8 +69,6 @@ forever after:
 **Don't want to use Terminal?** Double-click tetmux once → click **Done**, then go
 to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway**
 next to the tetmux message.
-
-> Windows shows a SmartScreen prompt instead — click **More info → Run anyway**.
 
 ## What you get
 
