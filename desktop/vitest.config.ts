@@ -1,10 +1,27 @@
 import { defineConfig } from 'vitest/config'
 
-// The Tetris engine is pure TypeScript with no DOM dependency, so the node
-// environment is enough. Tests live next to the code as *.test.ts.
+// Two test environments:
+//  - node:  pure logic (Tetris engine, PtyManager) — fast, no DOM.
+//  - dom:   renderer behaviour that touches the DOM (focus-pause, status bar).
+//           These files are named *.dom.test.ts and run under happy-dom.
 export default defineConfig({
   test: {
-    include: ['src/**/*.test.ts'],
-    environment: 'node',
+    projects: [
+      {
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['src/**/*.test.ts'],
+          exclude: ['src/**/*.dom.test.ts'],
+        },
+      },
+      {
+        test: {
+          name: 'dom',
+          environment: 'happy-dom',
+          include: ['src/**/*.dom.test.ts'],
+        },
+      },
+    ],
   },
 })

@@ -191,6 +191,40 @@ func renderPauseMenu(renderer *lipgloss.Renderer, selected int) string {
 	return box.Render(title + "\n\n" + menu + "\n\n" + hint)
 }
 
+// renderPausedBanner is the NON-interactive counterpart to renderPauseMenu,
+// shown over the board when the game is paused but the command pane is focused.
+// It carries the same 일시정지 / PAUSED header so the stopped state is obvious,
+// but omits the selectable 계속하기 / 재시작 items (those keys route to the child
+// while the command pane is focused, so offering them here would be a lie). The
+// hint tells the player how to get control back: focus the game pane.
+func renderPausedBanner(renderer *lipgloss.Renderer) string {
+	title := renderer.NewStyle().Bold(true).Foreground(lipgloss.Color("226")).Render("⏸  일시정지 / PAUSED")
+	hint := renderer.NewStyle().Faint(true).Render("게임 창을 선택하면 이어집니다")
+	box := renderer.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("226")).
+		Padding(1, 3)
+	return box.Render(title + "\n\n" + hint)
+}
+
+// renderGameOverBanner is the NON-interactive counterpart to renderGameOverMenu,
+// shown over the board after a loss while the command pane is focused. It keeps
+// the 게임 오버 header and the score so the result is visible, but drops the
+// interactive 재시작 item; the hint points at focusing the game to restart.
+func renderGameOverBanner(renderer *lipgloss.Renderer, score, best int) string {
+	title := renderer.NewStyle().Bold(true).Foreground(lipgloss.Color("196")).Render("💀  게임 오버 / GAME OVER")
+	scoreLine := renderer.NewStyle().Render("점수 " + itoa(score))
+	if best > 0 {
+		scoreLine += renderer.NewStyle().Faint(true).Render("   최고 " + itoa(best))
+	}
+	hint := renderer.NewStyle().Faint(true).Render("게임 창을 선택해 다시 시작")
+	box := renderer.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("196")).
+		Padding(1, 3)
+	return box.Render(title + "\n\n" + scoreLine + "\n\n" + hint)
+}
+
 // renderGameOverMenu returns the centered overlay shown after a loss: a
 // "게임 오버" banner, the final (and best) score, and the 재시작 prompt. It
 // mirrors renderPauseMenu's framed look but in red.

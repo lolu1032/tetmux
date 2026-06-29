@@ -88,28 +88,35 @@ func (m *Model) renderRight(l layout.Layout) string {
 		return style.Render("window too small")
 	}
 
-	// The Paused / GameOver overlays are INTERACTIVE modals (their Resume /
-	// Restart keys only work when the game pane has focus). Show them only while
-	// the game is focused: when the command pane is focused those keys route to
-	// the child instead, so an overlay shown then would be an unreachable,
-	// undismissable modal contradicting the status bar's focus:LEFT. With the
-	// command pane focused we fall through to the plain board (a non-modal,
-	// background view) so focus and what's drawn never disagree.
-	if focused {
-		// While stopped, show a centered pause menu over the whole pane instead of
-		// the board — the "일시정지 / 계속하기" overlay.
-		if m.game.State() == tetris.Paused {
-			menu := renderPauseMenu(m.renderer, m.pauseSel)
-			body := lipgloss.Place(maxInt(w, 1), maxInt(h, 1), lipgloss.Center, lipgloss.Center, menu)
-			return style.Render(body)
+	// Paused / GameOver are drawn as a centered card over the board in BOTH focus
+	// states, so a stopped game never masquerades as a live one. The variant
+	// depends on focus, because the Resume/Restart keys only reach the game while
+	// it is focused:
+	//
+	//   - Game focused  -> the INTERACTIVE menu (계속하기 / 재시작). Its keys work.
+	//   - Command pane focused -> a STATIC banner (the same 일시정지 / 게임 오버
+	//     header, but no selectable items). It makes the stopped state obvious
+	//     without pretending to be a modal awaiting input it can't receive — those
+	//     keys route to the child now, so an interactive menu here would be an
+	//     unreachable, undismissable modal contradicting the status bar's focus.
+	//
+	// The interactive marker "계속하기" therefore appears only in the focused
+	// variant; the static banner shows the user paused it even with focus elsewhere.
+	switch m.game.State() {
+	case tetris.Paused:
+		card := renderPausedBanner(m.renderer)
+		if focused {
+			card = renderPauseMenu(m.renderer, m.pauseSel)
 		}
-		// After a loss, replace the board with the game-over overlay (final score +
-		// the 재시작 prompt), mirroring the pause overlay.
-		if m.game.State() == tetris.GameOver {
-			menu := renderGameOverMenu(m.renderer, m.game.Score, m.best)
-			body := lipgloss.Place(maxInt(w, 1), maxInt(h, 1), lipgloss.Center, lipgloss.Center, menu)
-			return style.Render(body)
+		body := lipgloss.Place(maxInt(w, 1), maxInt(h, 1), lipgloss.Center, lipgloss.Center, card)
+		return style.Render(body)
+	case tetris.GameOver:
+		card := renderGameOverBanner(m.renderer, m.game.Score, m.best)
+		if focused {
+			card = renderGameOverMenu(m.renderer, m.game.Score, m.best)
 		}
+		body := lipgloss.Place(maxInt(w, 1), maxInt(h, 1), lipgloss.Center, lipgloss.Center, card)
+		return style.Render(body)
 	}
 
 	board := joinRows(renderTetris(m.game, m.renderer))

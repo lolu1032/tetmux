@@ -32,6 +32,10 @@ export class TetrisGame {
   private best = Number(localStorage.getItem(BEST_KEY) || 0)
   private lastTime = 0
   private raf = 0
+  // True only when a pause was triggered by losing focus (not by the user's
+  // own 'p'). Lets focus-resume distinguish "I auto-paused this" from "the user
+  // deliberately paused", so a manual pause is never silently resumed.
+  private autoPaused = false
   private readonly onSnapshot?: (snap: GameSnapshot, best: number) => void
 
   constructor(opts: { onSnapshot?: (snap: GameSnapshot, best: number) => void } = {}) {
@@ -68,12 +72,26 @@ export class TetrisGame {
     ro.observe(this.boardWrap)
   }
 
-  start(): void {
-    this.engine.start()
-  }
-
   setActive(active: boolean): void {
     this.el.classList.toggle('focused', active)
+    const status = this.engine.snapshot().status
+    if (!active) {
+      // A soft-drop key held at the moment focus leaves would never receive its
+      // keyup (handleKeyUp only runs while focused), so clear it here — otherwise
+      // the piece keeps fast-dropping (and scoring) after focus returns.
+      this.engine.setSoftDrop(false)
+      // Focus left the Tetris pane — auto-pause a live game so it does not keep
+      // falling (and topping out) while the user works in the terminal. This is
+      // the whole point of the app: the game waits for you.
+      if (status === 'playing') {
+        this.engine.togglePause()
+        this.autoPaused = true
+      }
+    } else {
+      // Focus returned — resume only what *we* auto-paused; respect a manual 'p'.
+      if (this.autoPaused && status === 'paused') this.engine.togglePause()
+      this.autoPaused = false
+    }
   }
 
   /** Start the requestAnimationFrame loop. Idempotent. */
@@ -124,6 +142,12 @@ export class TetrisGame {
       case 'p':
       case 'P':
         this.engine.togglePause()
+        return true
+      case 'r':
+      case 'R':
+        // Restart with a fresh board at any time (matches the original Go TUI).
+        this.engine.start()
+        this.autoPaused = false
         return true
       case 'Enter': {
         const status = this.engine.snapshot().status

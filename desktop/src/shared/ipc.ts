@@ -6,7 +6,6 @@ export interface PtyCreateOptions {
   rows: number
   cwd?: string
   shell?: string
-  name?: string
 }
 
 export interface PtyDataEvent {
@@ -28,6 +27,7 @@ export const IPC = {
   ptyKill: 'pty:kill',
   ptyData: 'pty:data',
   ptyExit: 'pty:exit',
+  gitBranch: 'git:branch',
 } as const
 
 // The surface exposed on `window.tetmux` by the preload bridge.
@@ -42,7 +42,13 @@ export interface TetmuxPtyApi {
   onExit(id: number, handler: (event: PtyExitEvent) => void): () => void
 }
 
+export interface TetmuxGitApi {
+  /** Current branch for a working directory, or null if not a git repo. */
+  branch(cwd: string): Promise<string | null>
+}
+
 export interface TetmuxApi {
   pty: TetmuxPtyApi
+  git: TetmuxGitApi
   platform: string
 }

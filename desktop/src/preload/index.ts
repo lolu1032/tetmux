@@ -44,6 +44,9 @@ const api: TetmuxApi = {
     onData: (id, handler) => subscribe(dataHandlers, id, handler),
     onExit: (id, handler) => subscribe(exitHandlers, id, handler),
   },
+  git: {
+    branch: (cwd: string) => ipcRenderer.invoke(IPC.gitBranch, cwd),
+  },
   platform: process.platform,
 }
 

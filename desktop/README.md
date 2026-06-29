@@ -14,15 +14,20 @@ real desktop app (`.dmg` / `.exe` / `.AppImage` / `.deb`) with a GUI terminal
 (xterm.js) instead of a terminal-inside-a-terminal.
 
 ```
-┌ 1:zsh  2:claude  3:build  + ──────────┬──────────────────────────┐
-│ $ claude                              │   ░░░░██░░░░   HOLD  [ ]  │
-│ > building the parser...              │   ░░██████░░   NEXT  [J]  │
-│ ✶ thinking                            │   ░░░░░░░░░░         [T]  │
-│                                       │   ██░░██░░██   SCORE 1200 │
-│ (left: your real shell)               │   (right: Tetris)  LV 3   │
-└───────────────────────────────────────┴──────────────────────────┘
- win 2:claude (3) | focus:TERMINAL | score 1200 · best 3400 · lv 3 | playing | C-b c:new …
+┌ tetmux    + ┬───────────────────────────┬──────────────────────────┐
+│ ● 1: zsh    │ $ claude                  │   ░░░░██░░░░   HOLD  [ ]  │
+│   ~ · main  │ > building the parser...  │   ░░██████░░   NEXT  [J]  │
+│ ◉ 2: claude │ ✶ thinking                │   ░░░░░░░░░░         [T]  │
+│   app · fix │                           │   ██░░██░░██   SCORE 1200 │
+│ ○ 3: build  │ (middle: your real shell) │   (right: Tetris)  LV 3   │
+└─────────────┴───────────────────────────┴──────────────────────────┘
+ win 2:claude (3) ● 2 waiting | focus:TERMINAL | score 1200 · best 3400 · lv 3 | playing
 ```
+
+The left **sidebar** lists your windows with a status dot — `●` unread output,
+`◉` bell, `○` exited — plus each window's directory and git branch. A background
+window that needs you lights up (and the status bar counts how many are
+`waiting`), so you know when to look up from Tetris.
 
 ## Architecture
 
@@ -32,11 +37,11 @@ real desktop app (`.dmg` / `.exe` / `.AppImage` / `.deb`) with a GUI terminal
 | Preload | `contextBridge` | safe `window.tetmux` API (no `nodeIntegration`) |
 | Renderer | TypeScript + Vite | xterm.js terminals, canvas Tetris, layout, keybindings |
 
-- `src/main` — `index.ts` (app + IPC), `pty-manager.ts` (pty sessions)
+- `src/main` — `index.ts` (app + IPC), `pty-manager.ts` (pty sessions), `git.ts` (branch lookup)
 - `src/preload` — the `window.tetmux` bridge
-- `src/renderer/src/terminal` — `term-window.ts` (xterm wrapper), `terminal-area.ts` (tabs)
+- `src/renderer/src/terminal` — `term-window.ts` (xterm wrapper + OSC 7 cwd), `terminal-area.ts` (sidebar), `window-activity.ts` (attention state, tested)
 - `src/renderer/src/tetris` — `engine.ts` (pure, tested), `render.ts` (canvas), `game.ts` (loop + input)
-- `src/renderer/src/app.ts` — split layout, focus routing, status bar
+- `src/renderer/src/app.ts` — split layout, focus routing · `status-bar.ts` — status segments
 - `src/shared/ipc.ts` — the typed IPC contract shared by all three layers
 
 ## Develop
@@ -72,6 +77,9 @@ Output lands in `dist/`. Packaging config is `electron-builder.yml`.
 
 **Focus** — click a pane to focus it. The status bar shows `focus:TERMINAL` or
 `focus:TETRIS`. While playing, `Tab` or `Esc` returns focus to the terminal.
+Leaving the Tetris pane **auto-pauses** a running game (it resumes when you focus
+it again) — so the board waits for you while you work. A pause you set yourself
+with `p` is left paused until you resume it.
 
 **Windows (tmux-style prefix `Ctrl+B`, then):**
 
@@ -84,5 +92,5 @@ Output lands in `dist/`. Packaging config is `electron-builder.yml`.
 On macOS, `⌘T` new · `⌘W` close · `⌘1`–`9` select · `⌘[` / `⌘]` prev/next also work.
 
 **Tetris (when focused):** `←`/`→` move · `↓` soft drop · `↑`/`x` rotate CW ·
-`z` rotate CCW · `Space` hard drop · `c`/`Shift` hold · `p` pause · `Enter`
-start / retry.
+`z` rotate CCW · `Space` hard drop · `c`/`Shift` hold · `p` pause · `r` restart
+(fresh board, any time) · `Enter` start / retry.

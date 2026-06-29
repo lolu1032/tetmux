@@ -1,8 +1,8 @@
 import { TerminalArea } from './terminal/terminal-area'
 import { TetrisGame } from './tetris/game'
 import type { GameSnapshot } from './tetris/engine'
-
-type Focus = 'terminal' | 'tetris'
+import { renderStatus, statusKey } from './status-bar'
+import type { Focus } from './types'
 
 const RATIO_KEY = 'tetmux.ratio'
 const MIN_RATIO = 0.3
@@ -63,12 +63,13 @@ export class App {
     this.right.className = 'right'
     this.statusBar.className = 'status-bar'
 
-    this.left.append(this.terminals.tabBar, this.terminals.panes)
+    this.left.append(this.terminals.panes)
     this.right.appendChild(this.tetris.el)
-    this.workspace.append(this.left, this.divider, this.right)
+    // [ sidebar | terminals | divider | tetris ]
+    this.workspace.append(this.terminals.sidebar, this.left, this.divider, this.right)
     this.root.append(this.workspace, this.statusBar)
 
-    this.terminals.onActiveChange = () => this.updateStatus()
+    this.terminals.onChange = () => this.updateStatus()
 
     // Click a pane to focus it.
     this.terminals.panes.addEventListener('mousedown', () => this.setFocus('terminal'))
@@ -78,16 +79,21 @@ export class App {
   }
 
   private applyRatio(): void {
-    this.left.style.flex = `0 0 ${(this.ratio * 100).toFixed(2)}%`
-    this.right.style.flex = '1 1 auto'
+    // The fixed-width sidebar sits outside the split; the terminal and Tetris
+    // panes share the remaining space in ratio : (1 - ratio).
+    this.left.style.flex = `${this.ratio} 1 0`
+    this.right.style.flex = `${1 - this.ratio} 1 0`
     this.terminals.fitActive()
     this.tetris.resize()
   }
 
   private setupDividerDrag(): void {
     const onMove = (e: MouseEvent): void => {
-      const rect = this.workspace.getBoundingClientRect()
-      const r = (e.clientX - rect.left) / rect.width
+      // Ratio is measured across the terminal+Tetris region only (excludes sidebar).
+      const start = this.left.getBoundingClientRect().left
+      const total = this.right.getBoundingClientRect().right - start
+      if (total <= 0) return
+      const r = (e.clientX - start) / total
       this.ratio = Math.min(MAX_RATIO, Math.max(MIN_RATIO, r))
       this.applyRatio()
     }
@@ -242,22 +248,24 @@ export class App {
 
   private updateStatus(): void {
     const snap = this.lastSnapshot
-    const focusLabel = this.focus === 'tetris' ? 'TETRIS' : 'TERMINAL'
-    const gameStatus = snap ? snap.status : 'ready'
-    const score = snap ? snap.score : 0
-    const level = snap ? snap.level : 0
     const hint = this.prefixActive
       ? 'prefix: c new · n/p next/prev · 1-9 window · space play · & close'
       : 'C-b c:new · C-b space:play · click pane to focus · ⌘T new'
 
-    const html = `
-      <span class="seg win">win ${this.terminals.activeLabel} (${this.terminals.count})</span>
-      <span class="seg focus focus-${this.focus}">focus:${focusLabel}</span>
-      <span class="seg score">score ${score} · best ${this.lastBest} · lv ${level}</span>
-      <span class="seg game game-${gameStatus}">${gameStatus}</span>
-      <span class="seg hint">${hint}</span>`
-    if (html === this.lastStatus) return
-    this.lastStatus = html
-    this.statusBar.innerHTML = html
+    const data = {
+      winLabel: this.terminals.activeLabel,
+      winCount: this.terminals.count,
+      attention: this.terminals.attentionCount,
+      focus: this.focus,
+      score: snap ? snap.score : 0,
+      best: this.lastBest,
+      level: snap ? snap.level : 0,
+      gameStatus: snap ? snap.status : ('ready' as const),
+      hint,
+    }
+    const key = statusKey(data)
+    if (key === this.lastStatus) return
+    this.lastStatus = key
+    renderStatus(this.statusBar, data)
   }
 }

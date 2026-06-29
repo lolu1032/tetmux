@@ -10,6 +10,20 @@ function defaultShell(): string {
   return process.env.SHELL || '/bin/bash'
 }
 
+// No real terminal is anywhere near this wide/tall; an absurd value almost
+// certainly means a bad/hostile resize message, so cap it.
+const MAX_DIM = 2000
+
+/**
+ * Coerce a terminal dimension to a safe integer in [min, MAX_DIM]. `cols | 0`
+ * turns NaN/undefined into 0 (and a pty with 0 columns misbehaves), so guard
+ * explicitly: fall back for non-finite input and clamp huge finite values.
+ */
+export function clampDim(value: number, min: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback
+  return Math.min(Math.max(Math.trunc(value), min), MAX_DIM)
+}
+
 interface PtySession {
   id: number
   proc: pty.IPty
@@ -28,8 +42,8 @@ export class PtyManager extends EventEmitter {
     const shell = opts.shell || defaultShell()
     const proc = pty.spawn(shell, [], {
       name: 'xterm-256color',
-      cols: Math.max(opts.cols | 0, 2),
-      rows: Math.max(opts.rows | 0, 1),
+      cols: clampDim(opts.cols, 2, 80),
+      rows: clampDim(opts.rows, 1, 24),
       cwd: opts.cwd || os.homedir(),
       env: {
         ...process.env,
@@ -62,7 +76,7 @@ export class PtyManager extends EventEmitter {
     const session = this.sessions.get(id)
     if (!session) return
     try {
-      session.proc.resize(Math.max(cols | 0, 2), Math.max(rows | 0, 1))
+      session.proc.resize(clampDim(cols, 2, 80), clampDim(rows, 1, 24))
     } catch {
       // resize can throw if the pty exited between the renderer's fit and here.
     }

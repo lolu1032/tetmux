@@ -28,7 +28,11 @@
     "node-pty": "^1.1.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["electron", "esbuild", "node-pty"]
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild",
+      "node-pty"
+    ]
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",
@@ -36,6 +40,7 @@
     "electron": "^42.5.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
+    "happy-dom": "^20.10.6",
     "typescript": "^6.0.3",
     "vite": "^7.0.0",
     "vitest": "^4.1.9"

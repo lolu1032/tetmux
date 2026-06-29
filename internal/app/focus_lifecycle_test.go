@@ -56,6 +56,12 @@ func TestUserPauseNotAutoResumedAndNoStuckModal(t *testing.T) {
 	if strings.Contains(out, pauseMenuMarker) {
 		t.Errorf("interactive pause modal (%q) must NOT be shown while the command pane is focused; right pane:\n%s", pauseMenuMarker, out)
 	}
+	// ...but a paused board must NOT masquerade as a live one either: the static
+	// 일시정지 banner has to be visible even with the command pane focused, so the
+	// user can tell at a glance the game they paused is actually stopped.
+	if !strings.Contains(out, "일시정지") {
+		t.Errorf("a paused-but-unfocused board must still show the static 일시정지 indicator (not a plain live-looking board); right pane:\n%s", out)
+	}
 
 	// Tab back to the game: a USER pause must NOT be auto-resumed (only an
 	// auto-pause is). It should stay Paused, and now (game focused) show the modal.
