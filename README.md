@@ -53,14 +53,15 @@ Grab the latest installer from the **[Releases page](https://github.com/lolu1032
 | **Windows** | `tetmux Setup <version>.exe` |
 | **Linux** | `tetmux-<version>.AppImage` · `.deb` |
 
-> **Opening on macOS:** the app is ad-hoc signed but not notarized yet, so the
-> first launch needs a confirm. Drag it to Applications, then **right-click the
-> app → Open → Open**. If macOS still says it's *"damaged"*, clear the download
-> quarantine once and reopen:
+> **Opening on macOS:** the app is ad-hoc signed but **not notarized** yet, so
+> Gatekeeper shows *"Apple cannot verify…"* on first launch. The reliable one-time
+> fix — drag it to Applications, then run:
 > ```sh
 > xattr -cr /Applications/tetmux.app
 > ```
-> Windows SmartScreen: **More info → Run anyway**.
+> and open it normally. No-terminal route: try to open it once, then
+> **System Settings → Privacy & Security → Open Anyway**. Windows SmartScreen:
+> **More info → Run anyway**.
 
 ## What you get
 
