@@ -7,6 +7,13 @@ import { IPC, type PtyCreateOptions } from '../shared/ipc'
 let mainWindow: BrowserWindow | null = null
 const ptyManager = new PtyManager()
 
+function appIconPath(): string | undefined {
+  if (process.platform === 'darwin') return undefined
+  return app.isPackaged
+    ? join(process.resourcesPath, 'icon.png')
+    : join(__dirname, '../../build/icon.png')
+}
+
 // Install a custom application menu so the default Electron menu (which exposes
 // View ▸ Reload / Force Reload via Cmd+R / Ctrl+R) is gone in shipped builds. A
 // reload is a main-frame, non-same-document navigation, so the
@@ -43,6 +50,8 @@ function buildAppMenu(): void {
 }
 
 function createWindow(): void {
+  const icon = appIconPath()
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -50,6 +59,7 @@ function createWindow(): void {
     minHeight: 480,
     show: false,
     backgroundColor: '#0b0e14',
+    ...(icon ? { icon } : {}),
     // Darwin uses the inset traffic lights; nudge them inward so they clear the
     // sidebar 'tetmux' brand text (trafficLightPosition is only meaningful with
     // hiddenInset on darwin). Other platforms keep the standard title bar.

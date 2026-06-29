@@ -1,0 +1,73 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="tetmux app icon">
+  <defs>
+    <linearGradient id="shell" x1="144" y1="112" x2="880" y2="928" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#172033"/>
+      <stop offset="1" stop-color="#070b12"/>
+    </linearGradient>
+    <linearGradient id="pane" x1="168" y1="212" x2="856" y2="856" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0d1726"/>
+      <stop offset="1" stop-color="#05080e"/>
+    </linearGradient>
+    <filter id="lift" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#020617" flood-opacity="0.42"/>
+    </filter>
+  </defs>
+
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="url(#shell)"/>
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="none" stroke="#263246" stroke-width="8"/>
+
+  <g filter="url(#lift)">
+    <rect x="148" y="146" width="728" height="732" rx="72" fill="url(#pane)" stroke="#324055" stroke-width="8"/>
+    <path d="M148 246H876" stroke="#263246" stroke-width="8"/>
+    <path d="M512 246V878" stroke="#27364c" stroke-width="8"/>
+
+    <circle cx="220" cy="196" r="18" fill="#ff5f57"/>
+    <circle cx="276" cy="196" r="18" fill="#f8c14a"/>
+    <circle cx="332" cy="196" r="18" fill="#31d07f"/>
+
+    <rect x="390" y="174" width="166" height="44" rx="22" fill="#1f2a3c"/>
+    <rect x="576" y="174" width="114" height="44" rx="22" fill="#111827"/>
+
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M252 450L374 552L252 654" stroke="#5ee787" stroke-width="54"/>
+      <path d="M390 690H466" stroke="#5ee787" stroke-width="54"/>
+    </g>
+
+    <g opacity="0.36" stroke="#223047" stroke-width="4">
+      <path d="M596 318H824"/>
+      <path d="M596 408H824"/>
+      <path d="M596 498H824"/>
+      <path d="M596 588H824"/>
+      <path d="M596 678H824"/>
+      <path d="M596 768H824"/>
+      <path d="M596 318V816"/>
+      <path d="M686 318V816"/>
+      <path d="M776 318V816"/>
+    </g>
+
+    <g>
+      <rect x="596" y="318" width="90" height="90" rx="16" fill="#31d07f"/>
+      <rect x="686" y="318" width="90" height="90" rx="16" fill="#31d07f"/>
+      <rect x="686" y="408" width="90" height="90" rx="16" fill="#31d07f"/>
+      <rect x="776" y="408" width="90" height="90" rx="16" fill="#33c7ff"/>
+
+      <rect x="596" y="636" width="90" height="90" rx="16" fill="#ffcf42"/>
+      <rect x="686" y="636" width="90" height="90" rx="16" fill="#ffcf42"/>
+      <rect x="596" y="726" width="90" height="90" rx="16" fill="#ff8a3d"/>
+      <rect x="686" y="726" width="90" height="90" rx="16" fill="#ff8a3d"/>
+      <rect x="776" y="726" width="90" height="90" rx="16" fill="#ff4d8d"/>
+    </g>
+
+    <g opacity="0.22">
+      <rect x="596" y="318" width="90" height="26" rx="13" fill="#ffffff"/>
+      <rect x="686" y="318" width="90" height="26" rx="13" fill="#ffffff"/>
+      <rect x="686" y="408" width="90" height="26" rx="13" fill="#ffffff"/>
+      <rect x="776" y="408" width="90" height="26" rx="13" fill="#ffffff"/>
+      <rect x="596" y="636" width="90" height="26" rx="13" fill="#ffffff"/>
+      <rect x="686" y="636" width="90" height="26" rx="13" fill="#ffffff"/>
+      <rect x="596" y="726" width="90" height="26" rx="13" fill="#ffffff"/>
+      <rect x="686" y="726" width="90" height="26" rx="13" fill="#ffffff"/>
+      <rect x="776" y="726" width="90" height="26" rx="13" fill="#ffffff"/>
+    </g>
+  </g>
+</svg>

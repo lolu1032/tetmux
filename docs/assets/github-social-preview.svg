@@ -1,0 +1,56 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="tetmux GitHub social preview">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="0.55" stop-color="#070b12"/>
+      <stop offset="1" stop-color="#05080e"/>
+    </linearGradient>
+    <linearGradient id="markShell" x1="72" y1="98" x2="424" y2="542" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#172033"/>
+      <stop offset="1" stop-color="#070b12"/>
+    </linearGradient>
+    <linearGradient id="markPane" x1="116" y1="138" x2="380" y2="504" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0d1726"/>
+      <stop offset="1" stop-color="#05080e"/>
+    </linearGradient>
+    <filter id="shadow" x="-12%" y="-12%" width="124%" height="124%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#020617" flood-opacity="0.42"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" rx="56" fill="url(#bg)"/>
+  <path d="M0 514C158 462 294 456 408 496C560 549 708 548 851 502C1015 449 1142 461 1280 527V640H0Z" fill="#0b1220"/>
+
+  <g transform="translate(88 108)" filter="url(#shadow)">
+    <rect x="0" y="0" width="424" height="424" rx="96" fill="url(#markShell)" stroke="#263246" stroke-width="5"/>
+    <rect x="42" y="42" width="340" height="340" rx="40" fill="url(#markPane)" stroke="#324055" stroke-width="5"/>
+    <path d="M42 100H382" stroke="#263246" stroke-width="5"/>
+    <path d="M212 100V382" stroke="#27364c" stroke-width="5"/>
+    <circle cx="80" cy="72" r="9" fill="#ff5f57"/>
+    <circle cx="106" cy="72" r="9" fill="#f8c14a"/>
+    <circle cx="132" cy="72" r="9" fill="#31d07f"/>
+
+    <path d="M94 178L152 228L94 278" fill="none" stroke="#5ee787" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M165 300H200" stroke="#5ee787" stroke-width="27" stroke-linecap="round"/>
+
+    <rect x="250" y="146" width="44" height="44" rx="8" fill="#31d07f"/>
+    <rect x="294" y="146" width="44" height="44" rx="8" fill="#31d07f"/>
+    <rect x="294" y="190" width="44" height="44" rx="8" fill="#31d07f"/>
+    <rect x="250" y="288" width="44" height="44" rx="8" fill="#ffcf42"/>
+    <rect x="294" y="288" width="44" height="44" rx="8" fill="#ffcf42"/>
+    <rect x="294" y="332" width="44" height="44" rx="8" fill="#ff8a3d"/>
+    <rect x="338" y="332" width="44" height="44" rx="8" fill="#ff4d8d"/>
+  </g>
+
+  <g transform="translate(582 174)">
+    <text x="0" y="118" fill="#e8eef8" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="132" font-weight="800">tetmux</text>
+    <text x="4" y="184" fill="#9fb0c7" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="32" font-weight="600">Run a command beside Tetris while you wait.</text>
+    <g transform="translate(6 232)">
+      <rect x="0" y="0" width="530" height="12" rx="6" fill="#27364c"/>
+      <rect x="0" y="0" width="160" height="12" rx="6" fill="#5ee787"/>
+      <rect x="176" y="0" width="76" height="12" rx="6" fill="#33c7ff"/>
+      <rect x="268" y="0" width="88" height="12" rx="6" fill="#ffcf42"/>
+      <rect x="372" y="0" width="64" height="12" rx="6" fill="#ff8a3d"/>
+    </g>
+  </g>
+</svg>

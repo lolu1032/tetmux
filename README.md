@@ -1,188 +1,127 @@
-# tetmux
+<p align="center">
+  <img src="docs/assets/tetmux-logo.svg" alt="tetmux" width="720">
+</p>
 
-Run a command beside Tetris while you wait.
+<p align="center">
+  <strong>Run a command beside Tetris while you wait.</strong>
+</p>
 
-You start an AI agent (or a long build, or a test run) in your terminal and then
-you wait. 30 seconds here, two minutes there. tetmux splits the terminal: the
-**left side** runs your commands through real PTYs — one or more cmux-style
-windows that all run in parallel (Claude in one, Codex in another, a build in a
-third) — and the **right pane** is a Tetris game. You fill the dead time without
-leaving the screen, so the moment a command needs you, you are already there.
+<p align="center">
+  <a href="https://github.com/lolu1032/tetmux/releases/latest"><img src="https://img.shields.io/github/v/release/lolu1032/tetmux?display_name=tag" alt="latest release"></a>
+  <a href="https://github.com/lolu1032/tetmux/releases"><img src="https://img.shields.io/github/downloads/lolu1032/tetmux/total?color=2dd4bf" alt="downloads"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-6b7686" alt="platforms">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4ade80" alt="license"></a>
+</p>
+
+You start an AI agent (or a long build, or a test run) and then you wait.
+30 seconds here, two minutes there. tetmux splits the window: the **left** runs
+your commands through real PTYs — one or more tmux-style windows that all run in
+parallel (Claude in one, Codex in another, a build in a third) — and the
+**right** is a Tetris game. You fill the dead time without leaving the screen, so
+the moment a command needs you, you are already there.
 
 It is the difference between a context-*destroying* distraction (picking up your
-phone) and a context-*preserving* one (a game in the corner of the same screen).
+phone) and a context-*preserving* one (a game in the corner of the same window).
 
 ```
- 1:claude*  2:zsh  +                          ← click a tab / + (mouse)
-┌───────────────────────────┬──────────────────────┐
-│ $ claude                  │   · · · ·████· · · · │
-│ > building the parser...  │   · · ·██████· · · · │
-│ ✶ thinking                │   · · · · · · · · · · │
-│                           │   ████· ·██· ·██████ │
-│ (left: your command)      │   (right: Tetris)    │
-└───────────────────────────┴──────────────────────┘
- focus:LEFT | score:1200 best:3400 lv:0 | playing | Tab/click:play | C-b z:ratio C-b q:quit
+┌ tetmux    + ┬───────────────────────────┬──────────────────────────┐
+│ ● 1: zsh    │ $ claude                  │   ░░░░██░░░░   HOLD  [ ]  │
+│   ~ · main  │ > building the parser...  │   ░░██████░░   NEXT  [J]  │
+│ ◉ 2: claude │ ✶ thinking                │   ░░░░░░░░░░         [T]  │
+│   app · fix │                           │   ██░░██░░██   SCORE 1200 │
+│ ○ 3: build  │ (middle: your real shell) │   (right: Tetris)  LV 3   │
+└─────────────┴───────────────────────────┴──────────────────────────┘
+ win 2:claude (3) ● 2 waiting | focus:TERMINAL | score 1200 · best 3400 · lv 3 | playing
 ```
 
-## Install
+The left **sidebar** lists your windows with a status dot — `●` unread output,
+`◉` bell, `○` exited — plus each window's directory and git branch. A background
+window that needs you lights up (and the status bar counts how many are
+`waiting`), so you know when to look up from Tetris.
 
-Requires Go 1.24+. Build from a checkout:
+## Download
 
-```sh
-git clone <this repo> && cd tetmux
-go build -o tetmux .          # then run ./tetmux
-# optionally put it on $PATH:
-go build -o "$(go env GOPATH)/bin/tetmux" .
-```
+Grab the latest installer from the **[Releases page](https://github.com/lolu1032/tetmux/releases/latest)**:
 
-(The module is named `tetmux` locally, so `go install tetmux@latest` does not
-work until it is published under a real VCS path like `github.com/<owner>/tetmux`.)
+| Platform | File |
+|----------|------|
+| **macOS** (Apple Silicon / Intel) | `tetmux-<version>-arm64.dmg` · `.dmg` |
+| **Windows** | `tetmux Setup <version>.exe` |
+| **Linux** | `tetmux-<version>.AppImage` · `.deb` |
 
-## Usage
+> **Opening on macOS:** the app isn't notarized yet, so the first launch is
+> blocked by Gatekeeper. **Right-click the app → Open** (or run
+> `xattr -dr com.apple.quarantine /Applications/tetmux.app`) once, and it opens
+> normally after that. Windows SmartScreen: **More info → Run anyway**.
 
-```sh
-tetmux                 # left pane runs your $SHELL
-tetmux claude          # left pane runs claude
-tetmux -- npm test     # use -- so the command's own flags aren't read by tetmux
-```
+## What you get
 
-`tetmux --help` and `tetmux --version` print help/version. Everything after a
-`--` is treated as the command, so `tetmux -- mycmd --help` passes `--help` to
-`mycmd`.
-
-When you run a command with `--`, tetmux exits with that command's own exit code
-once you quit, so `tetmux -- npm test` is usable in scripts and `&&` chains.
-
-## Modes
-
-By default tetmux runs its **built-in multiplexer** — the left command pane is a
-vt10x-emulated PTY, so it works out of the box with no extra software. Two opt-in
-modes:
-
-- `tetmux --tmux [command]` delegates the command pane to a **real tmux session**
-  (tmux renders any TUI perfectly); tetmux supplies only the Tetris pane via
-  `--tetris-only`. Needs `tmux` installed — without it tetmux tells you how to
-  install it, or just drop `--tmux`.
-- `tetmux --tetris-only` runs just the standalone Tetris pane (the game half of
-  the `--tmux` layout).
-
-In `--tmux` mode the command pane is a real tmux pane, so tmux's own keybindings
-apply there; the `Ctrl-b` controls below describe the **built-in** mode.
+- **Real terminals, in parallel.** Each window is a true PTY (via `node-pty`)
+  rendered with [xterm.js](https://xtermjs.org) — `vim`, `top`, an agent TUI, all
+  render correctly. Run several at once; only the active one is shown, the rest
+  keep working in the background.
+- **Attention without babysitting.** Background windows light a sidebar dot on
+  new output (`●`), bell (`◉`), or exit (`○`), and the status bar counts how many
+  are waiting — so you can play and still know the instant a command needs you.
+- **A real Tetris.** 7-bag randomizer, wall kicks, ghost piece, hold, 5-piece
+  next preview, DAS/ARR auto-shift, lock delay, level-based speed-up, and a best
+  score that persists. It **auto-pauses when you leave the pane** and resumes
+  when you come back — the board waits for you while you work.
+- **Per-project windows.** A new window opens in the active window's directory
+  (not `$HOME`), and the sidebar shows each window's folder + git branch.
 
 ## Controls
 
-**Mouse** (cmux-style): the top row is a **tab bar** — click a window tab to
-switch to it, click **`+`** to open a new window, and click a pane to focus it.
-**Drag the divider** between the two panes (grab the boundary column and drag) to
-resize the split live — the command pane reflows as you drag, and the Tetris board
-is never crushed below its minimum width. No keyboard prefix needed.
+**Focus** — click a pane to focus it; the status bar shows `focus:TERMINAL` or
+`focus:TETRIS`. While playing, `Tab` or `Esc` returns focus to the terminal.
+Leaving the Tetris pane **auto-pauses** a running game (it resumes when you focus
+it again). A pause you set yourself with `p` stays paused until you resume it.
+**Double-click a window's title** in the sidebar to rename it.
 
-**`Tab` toggles focus** between the command pane and the game — one key to jump
-between typing and playing. The focused pane has a bright border.
+**Windows** — tmux-style prefix `Ctrl+B`, then:
 
-When the **game** is focused, every key plays directly (no prefix):
+| key | action | | key | action |
+|-----|--------|-|-----|--------|
+| `c` | new window (in the current dir) | | `n` / `p` | next / prev window |
+| `1`–`9` | select window | | `&` / `x` | close window |
+| `Space` | focus Tetris (play) | | `Tab` | toggle focus |
+| `Ctrl+B` | send a literal `Ctrl+B` to the terminal | | | |
 
-| Keys | Action |
-|------|--------|
-| `Tab` | back to the command pane |
-| `←` `→` / `h` `l` | move left / right |
-| `↓` / `j` | soft drop |
-| `↑` / `x` | rotate clockwise |
-| `z` | rotate counter-clockwise |
-| `space` | hard drop |
-| `c` | hold / swap the current piece |
-| `Esc` / `p` | pause — opens a 계속하기 / 재시작 menu (↑↓ to move, `Enter` to pick; `Esc`/`p` quick-resume) |
-| `r` | restart (new board, any time) |
+On macOS, `⌘T` new · `⌘W` close · `⌘1`–`9` select · `⌘[` / `⌘]` prev/next also work.
 
-After a loss, a game-over overlay shows your final score and best — press `Enter`
-or `r` to start a new game.
-
-When the **command** pane is focused you type into your program as normal,
-including `Esc` (so claude's Esc-to-interrupt still works). `Tab` switches to
-the game; for a literal Tab (shell completion) use `C-b Tab`.
-
-Window/meta actions use a `Ctrl-b` **prefix**, like tmux — press `Ctrl-b`,
-release, then:
-
-| Keys | Action |
-|------|--------|
-| `C-b c` | new command window (cmux-style — runs `$SHELL`) |
-| `C-b n` / `C-b p` | next / previous window |
-| `C-b 1`…`9` | jump to window N |
-| `C-b x` | close the current window |
-| `C-b >` / `C-b <` | grow / shrink the left pane (aliases: `.` / `,`) |
-| `C-b =` | reset the panes to an even split |
-| `C-b z` | cycle preset split ratios (2:1 / 1:1 / 1:2) |
-| `C-b q` | quit |
-| `C-b l` / `C-b h` | focus right / left (alternative to `Tab`) |
-| `C-b Tab` | send a literal `Tab` to the focused pane (shell completion) |
-| `C-b C-b` | send a literal `Ctrl-b` to the focused pane |
-
-### Multiple windows (cmux-style)
-
-The left side is a stack of **command windows** that all run in parallel — one
-shown at a time, the rest live in the background. The **top tab bar** lists them
-(e.g. `1:zsh  2:claude  3:npm`, the active one highlighted) with a `+` button.
-
-- **Mouse:** click a tab to switch, click `+` to add a window.
-- **Keyboard:** `C-b c` new, `C-b n`/`C-b p` and `C-b 1`…`9` switch, `C-b x` close.
-
-Run a different agent in each — Claude in one, Codex in another — and keep
-playing Tetris on the right while they all work.
+**Tetris** (when focused) — `←`/`→` move (hold to auto-shift) · `↓` soft drop ·
+`↑`/`x` rotate CW · `z` rotate CCW · `Space` hard drop · `c` hold · `p` pause ·
+`r` restart · `Enter` start / retry.
 
 ## How it works
 
-- Each command window is a real PTY (`creack/pty`) parsed by a vt10x cell-grid
-  terminal emulator, so full-screen / alt-screen programs (`vim`, `top`,
-  `less`, an agent TUI) render correctly instead of as broken escape codes.
-  Windows run in parallel; only the active one is drawn, and 24-bit truecolor
-  output is down-converted to the terminal's profile so it never corrupts.
-- The right pane is a self-contained Tetris (7-bag randomizer, SRS-lite wall
-  kicks, standard 100/300/500/800 line scoring) with **HOLD**, a **ghost**
-  landing outline, **next-piece preview**, and **level-based speed-up** (gravity
-  accelerates every 10 lines). The HOLD/NEXT side panel appears when the pane is
-  wide enough. The best score persists across runs (under `$XDG_STATE_HOME`).
-- Redraws are **push-based**: a reader goroutine notifies the UI only when the
-  child actually emits output, and the gravity tick runs only while a piece is
-  falling. An idle shell costs ~0 CPU.
+| Layer | Tech | Responsibility |
+|-------|------|----------------|
+| Main process | Electron + `node-pty` | spawns/owns real PTYs, window lifecycle, IPC, app menu |
+| Preload | `contextBridge` | safe `window.tetmux` API (no `nodeIntegration`) |
+| Renderer | TypeScript + Vite | xterm.js terminals, canvas Tetris, layout, keybindings |
 
-The architecture keeps all game / routing / layout / render arithmetic in pure,
-unit-tested packages (`internal/tetris`, `internal/router`, `internal/layout`,
-`internal/vtrender`); `internal/app` is the bubbletea + PTY + vt10x glue.
+The renderer never touches Node directly — `contextIsolation` is on and the only
+bridge is a typed `window.tetmux` surface. The Tetris engine is pure and
+unit-tested; the render loop idles when the game isn't playing so an open-but-idle
+window costs almost nothing.
 
-## Korean / CJK input (IME)
+## Build from source
 
-Composing Korean/CJK in a full-screen TUI (an agent's input box) is handled by your
-**terminal**, not by tetmux: the in-progress 조합 글자 (preedit) is an OS overlay the
-terminal draws at the cursor. tetmux anchors the real cursor on the command pane's
-input cell (like tmux does) so a capable terminal composes inline — but where the
-preedit actually appears is the terminal's decision.
-
-- **Composes inline:** iTerm2, Ghostty, WezTerm, Kitty.
-- **Apple Terminal** mis-places the preedit in full-screen apps — a known
-  Terminal.app limitation (it happens with the agent in a plain terminal too, not
-  just tetmux). For heavy Korean input use one of the terminals above.
-- `TETMUX_NO_IME_CURSOR=1` disables the cursor anchoring and hands the cursor back to
-  the default behavior, if you prefer it.
-
-(Committed Korean/CJK text always renders correctly regardless of terminal — only the
-live IME composition overlay is terminal-dependent.)
-
-## Caveats
-
-- If the terminal is too small to fit the 10×20 board, the right pane shows
-  "window too small" and preserves your game state until you resize back.
-- If the left command fails to start (typo, not on `$PATH`), the left pane shows
-  the error and tetmux exits non-zero after you quit.
-- Set `TETMUX_LOG=/path/to/log` to append debug logs (spawn errors, exit codes).
-
-## Development
+Requires Node 20+ and a C/C++ toolchain for `node-pty` (Xcode CLT on macOS).
 
 ```sh
-go build ./...
-go vet ./...
-go test -race ./...
+cd desktop
+pnpm install        # installs deps + rebuilds node-pty for Electron
+pnpm dev            # launch the app with hot reload
+pnpm test           # vitest
+pnpm typecheck      # tsc for main/preload + renderer
+pnpm package        # build a downloadable installer for the current platform
 ```
+
+`pnpm package:mac` / `package:win` / `package:linux` build the per-platform
+installers into `desktop/dist/`. See [`desktop/README.md`](desktop/README.md) for
+the full developer guide.
 
 ## License
 

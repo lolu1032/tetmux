@@ -79,18 +79,20 @@ Output lands in `dist/`. Packaging config is `electron-builder.yml`.
 `focus:TETRIS`. While playing, `Tab` or `Esc` returns focus to the terminal.
 Leaving the Tetris pane **auto-pauses** a running game (it resumes when you focus
 it again) — so the board waits for you while you work. A pause you set yourself
-with `p` is left paused until you resume it.
+with `p` is left paused until you resume it. **Double-click a window's title** in
+the sidebar to rename it.
 
 **Windows (tmux-style prefix `Ctrl+B`, then):**
 
 | key | action | | key | action |
 |-----|--------|-|-----|--------|
-| `c` | new window | | `n` / `p` | next / prev window |
+| `c` | new window (in the current dir) | | `n` / `p` | next / prev window |
 | `1`–`9` | select window | | `&` / `x` | close window |
 | `Space` | focus Tetris (play) | | `Tab` | toggle focus |
+| `Ctrl+B` | send a literal `Ctrl+B` to the terminal | | | |
 
 On macOS, `⌘T` new · `⌘W` close · `⌘1`–`9` select · `⌘[` / `⌘]` prev/next also work.
 
-**Tetris (when focused):** `←`/`→` move · `↓` soft drop · `↑`/`x` rotate CW ·
-`z` rotate CCW · `Space` hard drop · `c`/`Shift` hold · `p` pause · `r` restart
-(fresh board, any time) · `Enter` start / retry.
+**Tetris (when focused):** `←`/`→` move (hold to auto-shift) · `↓` soft drop ·
+`↑`/`x` rotate CW · `z` rotate CCW · `Space` hard drop · `c` hold · `p` pause ·
+`r` restart (fresh board, any time) · `Enter` start / retry.

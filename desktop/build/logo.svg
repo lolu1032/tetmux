@@ -1,0 +1,44 @@
+<svg width="1400" height="420" viewBox="0 0 1400 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="tetmux logo">
+  <defs>
+    <linearGradient id="markShell" x1="48" y1="32" x2="368" y2="388" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#172033"/>
+      <stop offset="1" stop-color="#070b12"/>
+    </linearGradient>
+    <linearGradient id="markPane" x1="84" y1="84" x2="336" y2="336" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0d1726"/>
+      <stop offset="1" stop-color="#05080e"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1400" height="420" rx="42" fill="#070b12"/>
+
+  <g transform="translate(52 30)">
+    <rect x="0" y="0" width="360" height="360" rx="84" fill="url(#markShell)" stroke="#263246" stroke-width="4"/>
+    <rect x="34" y="34" width="292" height="292" rx="34" fill="url(#markPane)" stroke="#324055" stroke-width="4"/>
+    <path d="M34 82H326" stroke="#263246" stroke-width="4"/>
+    <path d="M180 82V326" stroke="#27364c" stroke-width="4"/>
+    <circle cx="66" cy="58" r="7" fill="#ff5f57"/>
+    <circle cx="88" cy="58" r="7" fill="#f8c14a"/>
+    <circle cx="110" cy="58" r="7" fill="#31d07f"/>
+
+    <path d="M78 152L126 194L78 236" fill="none" stroke="#5ee787" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M136 254H166" stroke="#5ee787" stroke-width="22" stroke-linecap="round"/>
+
+    <rect x="214" y="124" width="38" height="38" rx="7" fill="#31d07f"/>
+    <rect x="252" y="124" width="38" height="38" rx="7" fill="#31d07f"/>
+    <rect x="252" y="162" width="38" height="38" rx="7" fill="#31d07f"/>
+    <rect x="214" y="244" width="38" height="38" rx="7" fill="#ffcf42"/>
+    <rect x="252" y="244" width="38" height="38" rx="7" fill="#ffcf42"/>
+    <rect x="252" y="282" width="38" height="38" rx="7" fill="#ff8a3d"/>
+    <rect x="290" y="282" width="38" height="38" rx="7" fill="#ff4d8d"/>
+  </g>
+
+  <g transform="translate(480 0)">
+    <text x="0" y="246" fill="#e8eef8" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="146" font-weight="800" letter-spacing="0">tetmux</text>
+    <rect x="18" y="282" width="548" height="10" rx="5" fill="#27364c"/>
+    <rect x="18" y="282" width="156" height="10" rx="5" fill="#5ee787"/>
+    <rect x="188" y="282" width="70" height="10" rx="5" fill="#33c7ff"/>
+    <rect x="272" y="282" width="86" height="10" rx="5" fill="#ffcf42"/>
+    <rect x="372" y="282" width="58" height="10" rx="5" fill="#ff8a3d"/>
+  </g>
+</svg>

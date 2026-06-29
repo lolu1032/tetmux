@@ -12,12 +12,17 @@ files:
   - "!**/*.{md,markdown}"
   - "!**/*.map"
 
+extraResources:
+  - from: build/icon.png
+    to: icon.png
+
 # node-pty ships a native addon that cannot run from inside the asar archive,
 # so it must be unpacked alongside the app.
 asarUnpack:
   - "**/node_modules/node-pty/**"
 
 mac:
+  icon: build/icon.icns
   category: public.app-category.developer-tools
   target:
     - dmg
@@ -26,6 +31,7 @@ mac:
   gatekeeperAssess: false
 
 win:
+  icon: build/icon.ico
   target:
     - nsis
 
@@ -34,6 +40,7 @@ nsis:
   allowToChangeInstallationDirectory: true
 
 linux:
+  icon: build/icons
   category: Development
   target:
     - AppImage
