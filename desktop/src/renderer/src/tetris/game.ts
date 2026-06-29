@@ -3,6 +3,13 @@ import { drawMini, drawPlayfield } from './render'
 
 const BEST_KEY = 'tetmux.best'
 
+// Keys whose action must fire only on the INITIAL press. The OS auto-repeats
+// keydown (~30/s) while a key is held; for these one-shot actions a repeat must
+// be a no-op (e.g. holding Space must not chain hard-drops). Movement
+// (ArrowLeft/ArrowRight) and soft-drop (ArrowDown) are intentionally absent so
+// they keep honoring auto-repeat.
+const ONE_SHOT = new Set([' ', 'ArrowUp', 'x', 'X', 'z', 'Z', 'c', 'C', 'r', 'R', 'Enter', 'p', 'P'])
+
 function fit(canvas: HTMLCanvasElement, cssW: number, cssH: number): CanvasRenderingContext2D {
   const dpr = window.devicePixelRatio || 1
   canvas.width = Math.max(1, Math.round(cssW * dpr))
@@ -111,6 +118,12 @@ export class TetrisGame {
 
   /** Returns true if the key was a game action (caller should preventDefault). */
   handleKeyDown(e: KeyboardEvent): boolean {
+    // Let app-level shortcuts (the Ctrl+B window prefix, ⌘ shortcuts) pass
+    // through untouched — never swallow a key carrying a ctrl/meta modifier.
+    if (e.ctrlKey || e.metaKey) return false
+    // Auto-repeat must not re-trigger one-shot actions; still consume the key so
+    // it never leaks to the page (caller preventDefaults on a true return).
+    if (e.repeat && ONE_SHOT.has(e.key)) return true
     switch (e.key) {
       case 'ArrowLeft':
         this.engine.moveLeft()
@@ -128,7 +141,6 @@ export class TetrisGame {
         return true
       case 'z':
       case 'Z':
-      case 'Control':
         this.engine.rotate(-1)
         return true
       case ' ':
@@ -136,7 +148,6 @@ export class TetrisGame {
         return true
       case 'c':
       case 'C':
-      case 'Shift':
         this.engine.hold()
         return true
       case 'p':

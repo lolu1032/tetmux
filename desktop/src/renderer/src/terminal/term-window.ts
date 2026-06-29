@@ -72,7 +72,7 @@ export class TermWindow {
     })
   }
 
-  async open(): Promise<void> {
+  async open(cwd?: string): Promise<void> {
     this.term.open(this.el)
     this.term.loadAddon(this.fitAddon)
     // OSC 7 (file://host/path) is how shells report their working directory.
@@ -94,6 +94,11 @@ export class TermWindow {
       ptyId = await window.tetmux.pty.create({
         cols: this.term.cols,
         rows: this.term.rows,
+        // Inherit the parent window's cwd when provided (must be an absolute
+        // path); anything else preserves PtyManager's homedir fallback. The
+        // caller (TerminalArea.newWindow) already validates, but re-check here
+        // as defense-in-depth so a future caller cannot bypass it.
+        ...(cwd && cwd.startsWith('/') ? { cwd } : {}),
       })
     } catch (err) {
       // Spawning the shell failed (bad $SHELL, native binding mismatch, …).

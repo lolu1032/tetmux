@@ -24,7 +24,12 @@ export class App {
   private readonly tetris: TetrisGame
 
   private focus: Focus = 'terminal'
-  private ratio = Number(localStorage.getItem(RATIO_KEY) || 0.62)
+  // Guard a corrupt/empty stored value: Number('') / Number('abc') → NaN, so fall
+  // back to 0.62 and clamp into the draggable range before it can break the layout.
+  private ratio = Math.min(
+    MAX_RATIO,
+    Math.max(MIN_RATIO, Number(localStorage.getItem(RATIO_KEY)) || 0.62),
+  )
   private prefixActive = false
   private prefixTimer = 0
   private lastSnapshot: GameSnapshot | null = null
@@ -70,6 +75,10 @@ export class App {
     this.root.append(this.workspace, this.statusBar)
 
     this.terminals.onChange = () => this.updateStatus()
+    // Activating a terminal window (sidebar click, ⌘1-9, ⌘T, C-b n/p/c) routes
+    // keyboard focus to the terminal so the user can type immediately — App owns
+    // focus routing, so Tetris auto-pause keeps working when focus leaves it.
+    this.terminals.onActivate = () => this.setFocus('terminal')
 
     // Click a pane to focus it.
     this.terminals.panes.addEventListener('mousedown', () => this.setFocus('terminal'))

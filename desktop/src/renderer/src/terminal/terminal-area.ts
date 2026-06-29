@@ -18,6 +18,14 @@ export class TerminalArea {
   /** Fired whenever anything the host renders changes (selection, attention, …). */
   onChange?: () => void
 
+  /**
+   * Fired when a window becomes active as a result of a USER action (sidebar
+   * click, select(), next()/prev(), newWindow()). The host wires this to route
+   * keyboard focus to the terminal. Purely-programmatic refreshes (refresh(),
+   * background-window close) deliberately do NOT fire it, to avoid focus steal.
+   */
+  onActivate?: () => void
+
   constructor() {
     this.sidebar = document.createElement('div')
     this.sidebar.className = 'sidebar'
@@ -61,6 +69,12 @@ export class TerminalArea {
   }
 
   async newWindow(): Promise<void> {
+    // Inherit the currently active window's working directory (tracked from OSC 7)
+    // so a new window opens beside your project instead of in $HOME. Read it BEFORE
+    // creating the new window. Only a non-empty absolute path is threaded; anything
+    // else falls back to PtyManager's homedir default (e.g. the very first window).
+    const c = this.activeWindow?.cwd
+    const cwd = c && c.startsWith('/') ? c : undefined
     const win = new TermWindow(this.nextId++)
     win.onTitleChange = () => this.refresh()
     win.onExit = () => this.refresh()
@@ -70,7 +84,7 @@ export class TerminalArea {
     // open is rolled back so it never lingers as an orphan with no entry.
     this.panes.appendChild(win.el)
     try {
-      await win.open()
+      await win.open(cwd)
     } catch {
       win.dispose()
       return
@@ -88,6 +102,11 @@ export class TerminalArea {
     })
     this.windows[index].fit()
     this.refresh()
+    // A user activated this window — let the host route keyboard focus to it.
+    // newWindow(), next() and prev() all funnel through here, so this single call
+    // covers sidebar click, ⌘1-9, ⌘T and C-b n/p/c; refresh() (the programmatic
+    // path, e.g. background-window close) deliberately does not.
+    this.onActivate?.()
   }
 
   /** Re-render the sidebar and let the host refresh the status bar. */

@@ -15,6 +15,10 @@ export const NEXT_COUNT = 5
 
 const LINE_SCORES = [0, 100, 300, 500, 800]
 const LOCK_DELAY_MS = 500
+// Standard Tetris "infinity" guard: a resting piece may reset the lock-delay
+// timer at most this many times. Once exhausted, further moves/rotations no
+// longer postpone the lock, so an infinitely-spun piece still locks on schedule.
+const MAX_LOCK_RESETS = 15
 const SOFT_DROP_MS = 30
 // Gravity (ms per row) indexed by level; clamps at the last entry.
 const GRAVITY_MS = [800, 720, 630, 550, 470, 380, 300, 220, 130, 100, 80, 70, 60, 50, 40, 30]
@@ -73,6 +77,7 @@ export class TetrisEngine {
 
   private gravityAcc = 0
   private lockAcc = 0
+  private lockResets = 0
   private softDropping = false
 
   private readonly rng: Rng
@@ -134,6 +139,7 @@ export class TetrisEngine {
     }
     this.gravityAcc = 0
     this.lockAcc = 0
+    this.lockResets = 0
     this.canHold = true
     if (!this.fits(piece)) {
       // Block out: the new piece overlaps the stack — game over.
@@ -176,7 +182,10 @@ export class TetrisEngine {
     const moved = { ...this.piece, x: this.piece.x + dx }
     if (this.fits(moved)) {
       this.piece = moved
-      this.lockAcc = 0
+      if (this.lockResets < MAX_LOCK_RESETS) {
+        this.lockAcc = 0
+        this.lockResets++
+      }
     }
   }
 
@@ -192,7 +201,10 @@ export class TetrisEngine {
       }
       if (this.fits(candidate)) {
         this.piece = candidate
-        this.lockAcc = 0
+        if (this.lockResets < MAX_LOCK_RESETS) {
+          this.lockAcc = 0
+          this.lockResets++
+        }
         return
       }
     }
@@ -244,7 +256,9 @@ export class TetrisEngine {
       if (this.fits({ ...this.piece, y: this.piece.y + 1 })) {
         this.piece = { ...this.piece, y: this.piece.y + 1 }
         if (this.softDropping) this.score += 1
+        // The piece actually fell a row — refill the lock-reset budget.
         this.lockAcc = 0
+        this.lockResets = 0
       } else {
         break
       }

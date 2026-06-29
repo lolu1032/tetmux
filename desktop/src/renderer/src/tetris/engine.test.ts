@@ -101,4 +101,38 @@ describe('TetrisEngine', () => {
     e.togglePause()
     expect(e.snapshot().status).toBe('playing')
   })
+
+  // DEFECT 3 — infinite-spin lock stall: bounded lock-delay resets.
+  it('eventually locks a resting piece despite continuous rotation', () => {
+    const e = new TetrisEngine({ rng: mulberry32(1) }) // seed 1 spawns an O piece
+    e.start()
+    let locked = false
+    for (let i = 0; i < 600; i++) {
+      e.rotate(1)
+      e.tick(50)
+      if (e.snapshot().board.some((r) => r.some((v) => v !== 0))) {
+        locked = true
+        break
+      }
+    }
+    // Before the fix rotate() zeroes lockAcc every iteration, so the piece never
+    // locks and the board stays empty after 600 iterations.
+    expect(locked).toBe(true)
+  })
+
+  it('does not lock a resting piece prematurely when rotated only a few times', () => {
+    const e = new TetrisEngine({ rng: mulberry32(1) }) // O piece
+    e.start()
+    // Let it fall to the floor without rotating (stop the moment it rests).
+    const onFloor = (): boolean =>
+      e.snapshot().active!.cells.some((c) => c.y === TOTAL_HEIGHT - 1)
+    for (let i = 0; i < 600 && !onFloor(); i++) e.tick(50)
+    expect(onFloor()).toBe(true)
+    // A handful of resets (well under the cap) must keep the piece alive.
+    for (let i = 0; i < 5; i++) {
+      e.rotate(1)
+      e.tick(50)
+    }
+    expect(e.snapshot().board.every((r) => r.every((v) => v === 0))).toBe(true)
+  })
 })

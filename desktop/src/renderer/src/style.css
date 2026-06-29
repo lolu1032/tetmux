@@ -93,6 +93,11 @@ body.dragging .divider {
   padding: 10px 12px;
   -webkit-app-region: drag;
 }
+/* macOS uses hiddenInset traffic lights in the top-left (see main/index.ts);
+   indent the brand so the window controls don't sit on top of it. */
+body[data-platform='darwin'] .sidebar-head {
+  padding-left: 76px;
+}
 .sidebar-head .brand {
   font-family: var(--mono);
   font-size: 13px;
@@ -355,6 +360,17 @@ kbd {
   border-top: 1px solid var(--border);
   white-space: nowrap;
   overflow: hidden;
+}
+/* Keep the status segments (win / attention / focus / score / game) intact on a
+   narrow window; let the trailing hint be the only thing that shrinks+ellipsizes. */
+.seg {
+  flex: 0 0 auto;
+}
+.seg.hint {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .seg.attention {
   color: var(--danger);

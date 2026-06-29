@@ -1,11 +1,46 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, shell, type MenuItemConstructorOptions } from 'electron'
 import { PtyManager } from './pty-manager'
 import { gitBranch } from './git'
 import { IPC, type PtyCreateOptions } from '../shared/ipc'
 
 let mainWindow: BrowserWindow | null = null
 const ptyManager = new PtyManager()
+
+// Install a custom application menu so the default Electron menu (which exposes
+// View ▸ Reload / Force Reload via Cmd+R / Ctrl+R) is gone in shipped builds. A
+// reload is a main-frame, non-same-document navigation, so the
+// 'did-start-navigation' handler below would killAll() every pty — silent data
+// loss for a "leave it running while you wait" app. Reload/devtools therefore
+// exist ONLY in development. Essentials are preserved via built-in roles: the
+// macOS app menu (About/Quit = Cmd+Q) and Edit (Undo/Redo/Cut/Copy/Paste/
+// Select-All — keeps xterm copy/paste working). The Window submenu is hand-built
+// with minimize/zoom only and deliberately OMITS the role's Close item: Cmd+W is
+// owned in-app to close the focused terminal tab (not the whole OS window, which
+// would killAll() every pty). The red traffic-light button / Cmd+Q still quit.
+function buildAppMenu(): void {
+  const isDev = !app.isPackaged
+  const template: MenuItemConstructorOptions[] = [
+    ...(process.platform === 'darwin'
+      ? [{ role: 'appMenu' } as MenuItemConstructorOptions]
+      : []),
+    { role: 'editMenu' },
+    { label: 'Window', submenu: [{ role: 'minimize' }, { role: 'zoom' }] },
+    ...(isDev
+      ? [
+          {
+            label: 'View',
+            submenu: [
+              { role: 'reload' },
+              { role: 'forceReload' },
+              { role: 'toggleDevTools' },
+            ],
+          } as MenuItemConstructorOptions,
+        ]
+      : []),
+  ]
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -15,7 +50,12 @@ function createWindow(): void {
     minHeight: 480,
     show: false,
     backgroundColor: '#0b0e14',
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    // Darwin uses the inset traffic lights; nudge them inward so they clear the
+    // sidebar 'tetmux' brand text (trafficLightPosition is only meaningful with
+    // hiddenInset on darwin). Other platforms keep the standard title bar.
+    ...(process.platform === 'darwin'
+      ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 16, y: 16 } }
+      : { titleBarStyle: 'default' as const }),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -76,6 +116,7 @@ ipcMain.on(IPC.ptyKill, (_event, id: number) => ptyManager.kill(id))
 ipcMain.handle(IPC.gitBranch, (_event, cwd: string) => gitBranch(cwd))
 
 app.whenReady().then(() => {
+  buildAppMenu()
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
