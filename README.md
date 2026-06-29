@@ -53,15 +53,25 @@ Grab the latest installer from the **[Releases page](https://github.com/lolu1032
 | **Windows** | `tetmux Setup <version>.exe` |
 | **Linux** | `tetmux-<version>.AppImage` · `.deb` |
 
-> **Opening on macOS:** the app is ad-hoc signed but **not notarized** yet, so
-> Gatekeeper shows *"Apple cannot verify…"* on first launch. The reliable one-time
-> fix — drag it to Applications, then run:
-> ```sh
-> xattr -cr /Applications/tetmux.app
-> ```
-> and open it normally. No-terminal route: try to open it once, then
-> **System Settings → Privacy & Security → Open Anyway**. Windows SmartScreen:
-> **More info → Run anyway**.
+### Opening it the first time (macOS)
+
+tetmux is **not notarized** (that needs a paid Apple Developer account), so macOS
+shows *"Apple cannot verify that tetmux is free of malware…"* on the first launch.
+This is expected for any unsigned app — clear it **once** and it opens normally
+forever after:
+
+1. Drag **tetmux** into your **Applications** folder.
+2. Open **Terminal** and run:
+   ```sh
+   xattr -cr /Applications/tetmux.app
+   ```
+3. Double-click **tetmux**. Done — no more prompts.
+
+**Don't want to use Terminal?** Double-click tetmux once → click **Done**, then go
+to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway**
+next to the tetmux message.
+
+> Windows shows a SmartScreen prompt instead — click **More info → Run anyway**.
 
 ## What you get
 
