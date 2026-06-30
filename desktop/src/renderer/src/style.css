@@ -93,10 +93,13 @@ body.dragging .divider {
   padding: 10px 12px;
   -webkit-app-region: drag;
 }
-/* macOS uses hiddenInset traffic lights in the top-left (see main/index.ts);
-   indent the brand so the window controls don't sit on top of it. */
+/* macOS uses hiddenInset traffic lights in the top-left (set at x:16,y:16 in
+   main/index.ts). Rather than shove the brand far to the right to clear them —
+   which left it lopsided, way out of line with the window list below — drop it
+   onto its own row beneath the lights and keep it left-aligned with the list. */
 body[data-platform='darwin'] .sidebar-head {
-  padding-left: 76px;
+  padding-top: 34px;
+  padding-left: 12px;
 }
 .sidebar-head .brand {
   font-family: var(--mono);
