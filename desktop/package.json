@@ -1,6 +1,6 @@
 {
   "name": "tetmux",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Run a command beside Tetris while you wait — desktop edition.",
   "author": "tetmux",
   "license": "PolyForm-Noncommercial-1.0.0",

@@ -11,6 +11,7 @@ vi.mock('@xterm/xterm', () => {
     constructor(_opts: unknown) {}
     open(): void {}
     loadAddon(): void {}
+    attachCustomKeyEventHandler(): void {}
     onData(): { dispose(): void } {
       return { dispose() {} }
     }
