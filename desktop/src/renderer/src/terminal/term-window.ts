@@ -83,6 +83,14 @@ export class TermWindow {
   async open(cwd?: string): Promise<void> {
     this.term.open(this.el)
     this.term.loadAddon(this.fitAddon)
+    // IME composition fix (esp. Korean 2-set on macOS). Mid-composition some IMEs
+    // deliver keydowns whose keyCode is the physical key, not 229; xterm reads any
+    // non-229 keydown during composition as the end of it and finalizes early, so
+    // e.g. "ㅊ"+"ㅣ" commit as two separate jamo instead of composing into "치",
+    // and the half-formed bytes can surface as C1 controls (<0085> …) in the shell.
+    // Skip xterm's keydown handling while a composition is active — the
+    // compositionend handler still fires and sends the finished text exactly once.
+    this.term.attachCustomKeyEventHandler((e) => !(e.type === 'keydown' && e.isComposing))
     // OSC 7 (file://host/path) is how shells report their working directory.
     this.term.parser.registerOscHandler(7, (data) => {
       this.handleOsc7(data)
